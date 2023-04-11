@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
         if (counter > 0)
         {
             updateCounter(counter);
+            printf("i will send you a signal so you collect %d processes at %d clock \n", counter, x);
             kill(Scheduler_Id, SIGUSR1);
-            printf("i will send you a signal so you collect %d processes", counter);
         }
     }
 
