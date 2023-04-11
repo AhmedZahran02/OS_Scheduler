@@ -3,19 +3,19 @@
 void clearResources(int);
 char **split(char *string, char *seperators, int *count);
 
+enum Schedule
+{
+    HPF,
+    SRTN,
+    RR
+};
+
 struct ScheduleType
 {
-    int id;
+    enum Schedule type;
     int parameter;
 };
 
-struct Process
-{
-    int id;
-    int arrivalTime;
-    int runTime;
-    int Priority;
-};
 struct Process *readFile(char *file, int *size);
 struct ScheduleType getChosenScheduling();
 
@@ -33,15 +33,22 @@ int main(int argc, char *argv[])
     if (clk_Id == 0)
     {
         system("gcc clk.c -o clk.out");
-        char *args[2] = {"clk.out", NULL};
-        execv("clk.out", args);
+        execl("clk.out", "clk.c", NULL);
+    }
+    else if (clk_Id == -1)
+    {
+        printf("clock has failed initailizing");
     }
 
     int Scheduler_Id = fork();
     if (Scheduler_Id == 0)
     {
         system("gcc scheduler.c -o scheduler.out");
-        execl("scheduler.out", "scheduler.out", NULL);
+        execl("scheduler.out", "scheduler.c", NULL);
+    }
+    else if (Scheduler_Id == -1)
+    {
+        printf("Scheduler has failed initailizing");
     }
 
     // 4. Use this function after creating the clock process to initialize clock
@@ -52,6 +59,13 @@ int main(int argc, char *argv[])
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
+    while (1)
+    {
+        x = getClk();
+        sleep(1);
+        printf("current time is %d\n", x);
+    }
+
     // 7. Clear clock resources
     destroyClk(true);
 }
@@ -95,7 +109,7 @@ struct Process *readFile(char *file, int *size)
 struct ScheduleType getChosenScheduling()
 {
     struct ScheduleType scheduleType;
-    int chosen_algorithm = -1;
+    int chosen_algorithm = 0;
     while (!(chosen_algorithm == 1 || chosen_algorithm == 2 || chosen_algorithm == 3))
     {
         printf("choose the scheduling algorithm\n");
@@ -104,7 +118,7 @@ struct ScheduleType getChosenScheduling()
         printf("3-Round Robin (RR)\n");
         scanf("%d", &chosen_algorithm);
     }
-    scheduleType.id = chosen_algorithm;
+    scheduleType.type = chosen_algorithm;
     if (chosen_algorithm == 3)
     {
         int quantum = -1;
@@ -232,4 +246,6 @@ char **split(char *string, char *seperators, int *count)
 void clearResources(int signum)
 {
     // TODO Clears all resources in case of interruption
+    destroyClk(true);
+    killpg(getpgrp(), SIGINT);
 }
