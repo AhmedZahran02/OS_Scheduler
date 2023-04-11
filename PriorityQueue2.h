@@ -1,4 +1,5 @@
-#include <headers.h>
+#pragma once
+#include "headers.h"
 
 #define MAX_SIZE 10
 
@@ -9,13 +10,13 @@ struct Node
     struct Node *next;
 };
 
-struct PriorityQueue
+struct PriorityQueue2
 {
     struct Node *front;
     int count;
 };
 
-typedef struct PriorityQueue PQ;
+typedef struct PriorityQueue2 PQ;
 
 PQ create()
 {
@@ -79,8 +80,8 @@ void insert(PQ *Q, int priority, struct Process data)
 struct Process dequeue(PQ *Q)
 {
     struct Process x;
-    x.arrivalTime = -1;
     x.id = -1;
+    x.arrivalTime = -1;
     x.Priority = -1;
     x.runTime = -1;
     if (isEmpty(Q))
@@ -96,8 +97,8 @@ struct Process dequeue(PQ *Q)
 struct Process front(PQ *Q)
 {
     struct Process x;
-    x.arrivalTime = -1;
     x.id = -1;
+    x.arrivalTime = -1;
     x.Priority = -1;
     x.runTime = -1;
     if (isEmpty(Q))
