@@ -17,6 +17,7 @@ typedef short bool;
 #define false 0
 
 #define SHKEY 300
+#define CONNKEY 400
 
 struct Process
 {

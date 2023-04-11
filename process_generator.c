@@ -1,10 +1,13 @@
 #include "headers.h"
 
+int msg_Id = -1;
+int shm_Id = -1;
 void clearResources(int);
 char **split(char *string, char *seperators, int *count);
-bool sendProcess()
-{
-}
+bool sendProcess(struct Process *Process);
+bool initializeMsgQueue();
+bool initializeShm();
+bool updateCounter(int counter);
 
 struct Process *readFile(char *file, int *size);
 struct ScheduleType getChosenScheduling();
@@ -50,13 +53,24 @@ int main(int argc, char *argv[])
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     int ind = 0;
+    initializeMsgQueue();
+    initializeShm();
+
     while (ind < size)
     {
         x = getClk();
+        int counter = 0;
         while (processArray[ind].arrivalTime == x && ind < size)
         {
-            sendProcess();
+            sendProcess(&processArray[ind]);
+            counter++;
             ind++;
+        }
+        if (counter > 0)
+        {
+            updateCounter(counter);
+            kill(Scheduler_Id, SIGUSR1);
+            printf("i will send you a signal so you collect %d processes", counter);
         }
     }
 
@@ -235,6 +249,48 @@ char **split(char *string, char *seperators, int *count)
 
     // return our array of strings
     return strings;
+}
+
+bool initializeMsgQueue()
+{
+    if ((msg_Id = msgget(CONNKEY, 0666 | IPC_CREAT)) == -1)
+    {
+        printf("failled to initialize msg queue");
+        return false;
+    }
+    return true;
+}
+
+bool initializeShm()
+{
+    if ((shm_Id = shmget(CONNKEY, 4, 0666 | IPC_CREAT)) == -1)
+    {
+        printf("failled to initialize shared memory");
+        return false;
+    }
+    return true;
+}
+
+bool sendProcess(struct Process *process)
+{
+    if (msg_Id == -1)
+    {
+        return false;
+    }
+    msgsnd(msg_Id, (void *)process, sizeof(process), IPC_NOWAIT);
+    return true;
+}
+
+bool updateCounter(int counter)
+{
+    int *counterAddress = (int *)shmat(shm_Id, (void *)0, 0);
+    if ((long)counterAddress == -1)
+    {
+        printf("Error in attaching the shm of the counter");
+        return false;
+    }
+    *counterAddress = counter;
+    return true;
 }
 
 void clearResources(int signum)
