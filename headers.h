@@ -25,6 +25,10 @@ struct Process
     int arrivalTime;
     int runTime;
     int Priority;
+    int remRunTime;   // initially = runTime
+    int realID;       // initially = -1
+    int startingTime; // initially = -1
+    int finishTime;   // initially = -1
 };
 
 enum Schedule

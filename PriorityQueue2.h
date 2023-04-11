@@ -6,7 +6,9 @@
 struct Node
 {
     int priority;
+
     struct Process data;
+
     struct Node *next;
 };
 
