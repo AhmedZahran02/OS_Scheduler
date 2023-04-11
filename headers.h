@@ -26,6 +26,19 @@ struct Process
     int Priority;
 };
 
+enum Schedule
+{
+    HPF,
+    SRTN,
+    RR
+};
+
+struct ScheduleType
+{
+    enum Schedule type;
+    int parameter;
+};
+
 ///==============================
 // don't mess with this variable//
 int *shmaddr; //

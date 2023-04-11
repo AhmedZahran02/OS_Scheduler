@@ -2,19 +2,9 @@
 
 void clearResources(int);
 char **split(char *string, char *seperators, int *count);
-
-enum Schedule
+bool sendProcess()
 {
-    HPF,
-    SRTN,
-    RR
-};
-
-struct ScheduleType
-{
-    enum Schedule type;
-    int parameter;
-};
+}
 
 struct Process *readFile(char *file, int *size);
 struct ScheduleType getChosenScheduling();
@@ -59,11 +49,15 @@ int main(int argc, char *argv[])
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
-    while (1)
+    int ind = 0;
+    while (ind < size)
     {
         x = getClk();
-        sleep(1);
-        printf("current time is %d\n", x);
+        while (processArray[ind].arrivalTime == x && ind < size)
+        {
+            sendProcess();
+            ind++;
+        }
     }
 
     // 7. Clear clock resources
