@@ -87,3 +87,14 @@ void destroyClk(bool terminateAll)
         killpg(getpgrp(), SIGINT);
     }
 }
+
+int min(int x , int y){
+    if(x < y ) return  x ;
+    return  y ;
+}
+
+int max(int x , int y){
+    if(x > y ) return  x ;
+    return  y ;
+}
+
