@@ -107,12 +107,8 @@ Process *readFile(char *file, int *size)
         {
             int count;
             char **output = split(line, "\t", &count);
-            Process process;
-            process.id = atoi(output[0]);
-            process.arrivalTime = atoi(output[1]);
-            process.runTime = atoi(output[2]);
-            process.Priority = atoi(output[3]);
-            processArray[(*size) - 1] = process;
+            int id = atoi(output[0]) ,arrival = atoi(output[1]) , runTime = atoi(output[2]) , priority = atoi(output[3]);
+            processArray[(*size) - 1] = createProcess(id , arrival , runTime , priority);
         }
         (*size)++;
     }

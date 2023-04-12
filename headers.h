@@ -100,4 +100,12 @@ int max(int x , int y){
     if(x > y ) return  x ;
     return  y ;
 }
-
+Process createProcess(int id , int arrival , int runTime , int P){
+    Process process;
+    process.id = id ;
+    process.arrivalTime = arrival;
+    process.runTime = runTime;
+    process.Priority = P;
+    process.finishTime = -1 ;
+    process.startingTime = -1 ;
+}
