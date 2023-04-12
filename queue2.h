@@ -4,7 +4,7 @@
 // Define a node structure for the linked list
 struct Node3
 {
-    struct Process data;
+    Process data;
     struct Node3 *next;
 };
 
@@ -16,7 +16,7 @@ struct Queue2
 };
 
 // Create a new node with the given data
-struct Node3 *createNode(struct Process data)
+struct Node3 *createNode(Process data)
 {
     struct Node3 *newNode = (struct Node3 *)malloc(sizeof(struct Node3));
     newNode->data = data;
@@ -40,7 +40,7 @@ int isEmpty(struct Queue2 *queue)
 }
 
 // Add an element to the rear of the queue
-void enqueue(struct Queue2 *queue, struct Process data)
+void enqueue(struct Queue2 *queue, Process data)
 {
     struct Node3 *newNode = createNode(data);
     if (isEmpty(queue))
@@ -56,9 +56,9 @@ void enqueue(struct Queue2 *queue, struct Process data)
 }
 
 // Remove an element from the front of the queue
-struct Process dequeue(struct Queue2 *queue)
+Process dequeue(struct Queue2 *queue)
 {
-    struct Process x;
+    Process x;
     x.arrivalTime = -1;
     x.id = -1;
     x.Priority = -1;
@@ -69,7 +69,7 @@ struct Process dequeue(struct Queue2 *queue)
         return x;
     }
     struct Node3 *temp = queue->front;
-    struct Process data = temp->data;
+    Process data = temp->data;
     queue->front = queue->front->next;
     if (queue->front == NULL)
     {

@@ -2,6 +2,7 @@
   "files.associations": {
     "signal.h": "c",
     "stdlib.h": "c",
-    "headers.h": "c"
+    "headers.h": "c",
+    "priorityqueue2.h": "c"
   }
 }
