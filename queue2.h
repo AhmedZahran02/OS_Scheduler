@@ -34,7 +34,7 @@ struct Queue2 createQueue()
 }
 
 // Check if the queue is empty
-int isEmpty(struct Queue2 *queue)
+bool isEmpty(struct Queue2 *queue)
 {
     return (queue->front == NULL);
 }
