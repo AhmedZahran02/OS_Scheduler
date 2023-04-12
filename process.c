@@ -2,7 +2,7 @@
 
 /* Modify this file as needed*/
 int remainingtime;
-struct Process *shmCurrProcess;
+Process *shmCurrProcess;
 
 int main(int agrc, char *argv[])
 {

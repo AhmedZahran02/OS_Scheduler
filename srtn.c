@@ -5,7 +5,6 @@
 /* Modify this file as needed*/
 // int remainingtime;
 
-#define CONNKEY 400
 int msgq_id, rec_val;
 void *shmAddrCnt;
 Process *shmCurrProcess;
