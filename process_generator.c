@@ -296,6 +296,8 @@ bool updateCounter(int counter)
 void clearResources(int signum)
 {
     // TODO Clears all resources in case of interruption
+    msgctl(msg_Id, IPC_RMID, (struct msqid_ds *)0);
+    shmctl(shm_Id, IPC_RMID, NULL);
     destroyClk(true);
     killpg(getpgrp(), SIGINT);
 }
