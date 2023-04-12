@@ -2,7 +2,7 @@
 
 /* Modify this file as needed*/
 int remainingtime;
-Process *shmCurrProcess;
+struct Process *shmCurrProcess;
 
 int main(int agrc, char *argv[])
 {
@@ -11,17 +11,23 @@ int main(int agrc, char *argv[])
     // TODO it needs to get the remaining time from somewhere
     // remainingtime = ??;
     shmCurrProcess = shmat(CONNKEY + 1, (void *)0, 0);
-    if (shmAddrCnt == -1)
+    shmCurrProcess->startingTime = getClk();
+
+    if (shmCurrProcess == -1)
     {
         perror("Error in attach in writer");
         exit(-1);
     }
     while (remainingtime > 0)
     {
-        // remainingtime = ??;
+        sleep(1);
+        remainingtime--;
+        shmCurrProcess->remRunTime = remainingtime;
     }
 
-    destroyClk(false);
+    shmCurrProcess->finishTime = getClk();
+
+    // destroyClk(false);
 
     return 0;
 }

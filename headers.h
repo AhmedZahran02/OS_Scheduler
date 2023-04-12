@@ -83,3 +83,39 @@ void destroyClk(bool terminateAll)
         killpg(getpgrp(), SIGINT);
     }
 }
+
+int min(int x , int y){
+    if(x < y ) return  x ;
+    return  y ;
+}
+
+int max(int x , int y){
+    if(x > y ) return  x ;
+    return  y ;
+}
+Process createProcess(int id , int arrival , int runTime , int P){
+    Process process;
+    process.id = id ;
+    process.arrivalTime = arrival;
+    process.runTime = runTime;
+    process.Priority = P;
+    process.finishTime = -1 ;
+    process.startingTime = -1 ;
+    return process;
+}
+void ProcessFinished(Process process){
+    FILE * file_ptr;
+    file_ptr = fopen("scheduler_log.txt","mode");
+    if(file_ptr == NULL)
+    {
+        printf("Error! in opening Scheduler log file");
+        exit(1);
+    }
+    char str[100] ;
+    strcpy(str, "At time");
+    const int time_size = 10 ;
+    fwrite(str, 1 , sizeof(str), file_ptr);
+    snprintf( str, time_size, "%d", getClk() );
+    strcpy(str, " process \n");
+    fclose(file_ptr);
+}
