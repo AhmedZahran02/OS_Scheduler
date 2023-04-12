@@ -3,49 +3,49 @@
 
 #define MAX_SIZE 10
 
-struct Node
+struct Node2
 {
     int priority;
 
-    Process data;
+    struct Process data;
 
-    struct Node *next;
+    struct Node2 *next;
 };
 
 struct PriorityQueue2
 {
-    struct Node *front;
+    struct Node2 *front;
     int count;
 };
 
-typedef struct PriorityQueue2 PQ;
+typedef struct PriorityQueue2 PQ2;
 
-PQ create()
+PQ2 create()
 {
-    PQ *Q = (PQ *)malloc(sizeof(PQ));
+    PQ2 *Q = (PQ2 *)malloc(sizeof(PQ2));
     Q->front = NULL;
     Q->count = 0;
     return *Q;
 }
 
-int isEmpty(PQ *Q)
+bool isEmpty2(PQ2 *Q)
 {
     if (Q->count == 0)
     {
-        return 1;
+        return true;
     }
     else
     {
-        return 0;
+        return false;
     }
 }
 
-int size(PQ *Q)
+int size(PQ2 *Q)
 {
     return Q->count;
 }
 
-void insert(PQ *Q, int priority, Process data)
+void insert(PQ2 *Q, int priority, struct Process data)
 {
     if (Q->count >= MAX_SIZE)
     {
@@ -53,7 +53,7 @@ void insert(PQ *Q, int priority, Process data)
         return;
     }
 
-    struct Node *temp = (struct Node *)malloc(sizeof(struct Node));
+    struct Node2 *temp = (struct Node2 *)malloc(sizeof(struct Node2));
     temp->priority = priority;
     temp->data = data;
     temp->next = NULL;
@@ -65,7 +65,7 @@ void insert(PQ *Q, int priority, Process data)
     }
     else
     {
-        struct Node *p, *q;
+        struct Node2 *p, *q;
         q = NULL;
         p = Q->front;
         while (p && p->priority <= temp->priority)
@@ -79,14 +79,14 @@ void insert(PQ *Q, int priority, Process data)
     Q->count++;
 }
 
-Process dequeue(PQ *Q)
+struct Process dequeue2(PQ2 *Q)
 {
-    Process x;
+    struct Process x;
     x.id = -1;
     x.arrivalTime = -1;
     x.Priority = -1;
     x.runTime = -1;
-    if (isEmpty(Q))
+    if (isEmpty2(Q))
     {
         return x;
     }
@@ -96,14 +96,14 @@ Process dequeue(PQ *Q)
     return x;
 }
 
-Process front(PQ *Q)
+struct Process front(PQ2 *Q)
 {
-    Process x;
+    struct Process x;
     x.id = -1;
     x.arrivalTime = -1;
     x.Priority = -1;
     x.runTime = -1;
-    if (isEmpty(Q))
+    if (isEmpty2(Q))
     {
         return x;
     }
