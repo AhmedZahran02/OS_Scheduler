@@ -10,18 +10,16 @@ void *shmAddrCnt;
 Process *shmCurrProcess;
 
 struct PriorityQueue2 currProcesses;
-struct Queue2 finishedProcesses;
 Process currProcess;
 Process tempProcess;
-
-void handler(int signum);
+struct Queue2 Processes;
+struct Queue2 finishedProcesses;
 
 int main(int agrc, char *argv[])
 {
     initClk();
-    signal(SIGUSR1, handler);
     currProcesses = create();
-    finishedProcesses = createQueue();
+    // finishedProcesses = createQueue();
     currProcess.id = -1;
 
     msgq_id = msgget(CONNKEY, 0666 | IPC_CREAT);
@@ -58,6 +56,7 @@ int main(int agrc, char *argv[])
                 else
                 {
                     // resume this procces by send signal to it by the pid
+                    kill(SIGCONT, currProcess.realID);
                 }
             }
         }
@@ -68,11 +67,12 @@ int main(int agrc, char *argv[])
 
                 tempProcess.id = shmCurrProcess->id;
                 tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-                //  cont.
-                //
-                //
-                //
-                enqueue(&finishedProcesses, tempProcess);
+                tempProcess.finishTime = shmCurrProcess->finishTime;
+                tempProcess.Priority = shmCurrProcess->Priority;
+                tempProcess.realID = shmCurrProcess->realID;
+                tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                tempProcess.startingTime = shmCurrProcess->startingTime;
+                tempProcess.runTime = shmCurrProcess->runTime;
                 if (currProcesses.count > 0)
                 {
                     currProcess = currProcesses.front->data;
@@ -92,6 +92,7 @@ int main(int agrc, char *argv[])
                     else
                     {
                         // resume this procces by send signal to it by the pid
+                        kill(SIGCONT, currProcess.realID);
                     }
                 }
             }
@@ -103,13 +104,18 @@ int main(int agrc, char *argv[])
                     if (shmCurrProcess->remRunTime > currProcess.remRunTime)
                     {
                         // stop the current process and create new on if runtime = remruntime
+                        kill(SIGSTOP, shmCurrProcess->realID);
+
                         tempProcess.id = shmCurrProcess->id;
                         tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-                        //  cont.
-                        //
-                        //
-                        //
-                        enqueue(&currProcesses, tempProcess);
+                        tempProcess.finishTime = shmCurrProcess->finishTime;
+                        tempProcess.Priority = shmCurrProcess->Priority;
+                        tempProcess.realID = shmCurrProcess->realID;
+                        tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                        tempProcess.startingTime = shmCurrProcess->startingTime;
+                        tempProcess.runTime = shmCurrProcess->runTime;
+
+                        insert(&currProcesses, tempProcess.remRunTime, tempProcess);
                         if (currProcess.realID == -1)
                         {
                             int Process_Id = fork();
@@ -123,6 +129,7 @@ int main(int agrc, char *argv[])
                         else
                         {
                             // resume this procces by send signal to it by the pid
+                            kill(SIGCONT, currProcess.realID);
                         }
                     }
                 }
@@ -156,14 +163,4 @@ int main(int agrc, char *argv[])
     // destroyClk(false);
 
     return 0;
-}
-
-void handler(int signum)
-{
-    int cnt = (int *)shmAddrCnt;
-    for (int i = 0; i < cnt; i++)
-    {
-        Process tempProcess;
-        rec_val = msgrcv(msgq_id, &(tempProcess), sizeof(tempProcess), 0, !IPC_NOWAIT);
-    }
 }
