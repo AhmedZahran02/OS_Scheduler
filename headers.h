@@ -13,6 +13,8 @@
 #include "string.h"
 
 typedef short bool;
+typedef struct Process Process;
+
 #define true 1
 #define false 0
 
