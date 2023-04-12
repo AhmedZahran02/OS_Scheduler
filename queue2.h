@@ -27,7 +27,7 @@ struct Node3 *createNode(Process data)
 // Initialize a new empty queue
 struct Queue2 createQueue()
 {
-    struct Queue2 *queue = (struct Queue *)malloc(sizeof(struct Queue2));
+    struct Queue2 *queue = (struct Queue2 *) (struct Queue *) malloc(sizeof(struct Queue2));
     queue->front = NULL;
     queue->rear = NULL;
     return *queue;

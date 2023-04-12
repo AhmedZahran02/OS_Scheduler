@@ -6,14 +6,13 @@ void handler(int signum);
 int main(int argc, char *argv[])
 {
     initClk();
-    signal(SIGUSR1, handler);
+//    signal(SIGUSR1, handler);
 
     // TODO implement the scheduler :)
     // upon termination release the clock resources.
 
     // Queue of current arrived processes
     struct Queue2 Arrived_Processes ;
-
 
 
 
