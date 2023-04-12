@@ -110,3 +110,19 @@ Process createProcess(int id , int arrival , int runTime , int P){
     process.startingTime = -1 ;
     return process;
 }
+void ProcessFinished(Process process){
+    FILE * file_ptr;
+    file_ptr = fopen("scheduler_log.txt","mode");
+    if(file_ptr == NULL)
+    {
+        printf("Error! in opening Scheduler log file");
+        exit(1);
+    }
+    char str[100] ;
+    strcpy(str, "At time");
+    const int time_size = 10 ;
+    fwrite(str, 1 , sizeof(str), file_ptr);
+    snprintf( str, time_size, "%d", getClk() );
+    strcpy(str, " process \n");
+    fclose(file_ptr);
+}
