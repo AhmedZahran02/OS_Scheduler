@@ -7,7 +7,7 @@ struct Node
 {
     int priority;
 
-    struct Process data;
+    Process data;
 
     struct Node *next;
 };
@@ -45,7 +45,7 @@ int size(PQ *Q)
     return Q->count;
 }
 
-void insert(PQ *Q, int priority, struct Process data)
+void insert(PQ *Q, int priority, Process data)
 {
     if (Q->count >= MAX_SIZE)
     {
@@ -79,9 +79,9 @@ void insert(PQ *Q, int priority, struct Process data)
     Q->count++;
 }
 
-struct Process dequeue(PQ *Q)
+Process dequeue(PQ *Q)
 {
-    struct Process x;
+    Process x;
     x.id = -1;
     x.arrivalTime = -1;
     x.Priority = -1;
@@ -96,9 +96,9 @@ struct Process dequeue(PQ *Q)
     return x;
 }
 
-struct Process front(PQ *Q)
+Process front(PQ *Q)
 {
-    struct Process x;
+    Process x;
     x.id = -1;
     x.arrivalTime = -1;
     x.Priority = -1;

@@ -1,3 +1,4 @@
+#pragma once
 #include <stdio.h> //if you don't use scanf/printf change this include
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,6 +14,8 @@
 #include "string.h"
 
 typedef short bool;
+typedef struct Process Process;
+
 #define true 1
 #define false 0
 

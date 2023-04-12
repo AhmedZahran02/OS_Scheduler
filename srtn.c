@@ -1,6 +1,6 @@
-#pragma once
 #include "PriorityQueue2.h"
 #include "queue2.h"
+#include "headers.h"
 
 /* Modify this file as needed*/
 // int remainingtime;
@@ -8,12 +8,12 @@
 #define CONNKEY 400
 int msgq_id, rec_val;
 void *shmAddrCnt;
-struct Process *shmCurrProcess;
+Process *shmCurrProcess;
 
 struct PriorityQueue2 currProcesses;
 struct Queue2 finishedProcesses;
-struct Process currProcess;
-struct Process tempProcess;
+Process currProcess;
+Process tempProcess;
 
 void handler(int signum);
 
@@ -164,7 +164,7 @@ void handler(int signum)
     int cnt = (int *)shmAddrCnt;
     for (int i = 0; i < cnt; i++)
     {
-        struct Process tempProcess;
+        Process tempProcess;
         rec_val = msgrcv(msgq_id, &(tempProcess), sizeof(tempProcess), 0, !IPC_NOWAIT);
     }
 }

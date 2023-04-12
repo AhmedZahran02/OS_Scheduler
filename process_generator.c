@@ -4,12 +4,12 @@ int msg_Id = -1;
 int shm_Id = -1;
 void clearResources(int);
 char **split(char *string, char *seperators, int *count);
-bool sendProcess(struct Process *Process);
+bool sendProcess(Process *Process);
 bool initializeMsgQueue();
 bool initializeShm();
 bool updateCounter(int counter);
 
-struct Process *readFile(char *file, int *size);
+Process *readFile(char *file, int *size);
 struct ScheduleType getChosenScheduling();
 
 int main(int argc, char *argv[])
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     // TODO Initialization
     // 1. Read the input files.
     int size = 0;
-    struct Process *processArray = readFile("processes.txt", &size);
+    Process *processArray = readFile("processes.txt", &size);
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     struct ScheduleType scheduleType = getChosenScheduling();
     // 3. Initiate and create the scheduler and clock processes.
@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
     int ind = 0;
     initializeMsgQueue();
     initializeShm();
-
     while (ind < size)
     {
         x = getClk();
@@ -78,7 +77,7 @@ int main(int argc, char *argv[])
     destroyClk(true);
 }
 
-struct Process *readFile(char *file, int *size)
+Process *readFile(char *file, int *size)
 {
     FILE *ptr;
     char *line = NULL;
@@ -92,7 +91,15 @@ struct Process *readFile(char *file, int *size)
         printf("file can't be opened \n");
     }
 
-    struct Process *processArray = malloc(2048);
+    int arraySize = -1;
+    while ((read = getline(&line, &len, ptr)) != -1)
+    {
+        arraySize++;
+    }
+
+    ptr = fopen(file, "r");
+
+    Process *processArray = malloc(arraySize * sizeof(Process));
     while ((read = getline(&line, &len, ptr)) != -1)
     {
         // printf("%s", line);
@@ -100,7 +107,7 @@ struct Process *readFile(char *file, int *size)
         {
             int count;
             char **output = split(line, "\t", &count);
-            struct Process process;
+            Process process;
             process.id = atoi(output[0]);
             process.arrivalTime = atoi(output[1]);
             process.runTime = atoi(output[2]);
@@ -271,7 +278,7 @@ bool initializeShm()
     return true;
 }
 
-bool sendProcess(struct Process *process)
+bool sendProcess(Process *process)
 {
     if (msg_Id == -1)
     {

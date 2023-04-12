@@ -1,8 +1,12 @@
 #include "headers.h"
+
+void handler(int signum);
+
 #include "queue2.h"
 int main(int argc, char *argv[])
 {
     initClk();
+    signal(SIGUSR1, handler);
 
     // TODO implement the scheduler :)
     // upon termination release the clock resources.
