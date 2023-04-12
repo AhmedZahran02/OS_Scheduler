@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     if (Scheduler_Id == 0)
     {
         system("gcc scheduler.c -o scheduler.out");
-        execl("scheduler.out", "scheduler.c", NULL);
+        execl("scheduler.out", "scheduler.c", &(scheduleType.type), &(scheduleType.parameter), NULL);
     }
     else if (Scheduler_Id == -1)
     {
@@ -144,6 +144,7 @@ struct ScheduleType getChosenScheduling()
         }
         scheduleType.parameter = quantum;
     }
+    return scheduleType;
 }
 
 char **split(char *string, char *seperators, int *count)

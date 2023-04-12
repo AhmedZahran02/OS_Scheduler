@@ -34,16 +34,9 @@ struct Process
     int finishTime;   // initially = -1
 };
 
-enum Schedule
-{
-    HPF,
-    SRTN,
-    RR
-};
-
 struct ScheduleType
 {
-    enum Schedule type;
+    int type;
     int parameter;
 };
 
