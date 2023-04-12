@@ -15,6 +15,7 @@ void handler(int signum);
 
 int main(int argc, char *argv[])
 {
+    printf("Scheduler is starting ...\n");
     initClk();
     signal(SIGUSR1, handler);
     processes = createQueue();
@@ -25,6 +26,19 @@ int main(int argc, char *argv[])
 
     int scheduleType = *argv[1];
     int scheduleArgument = *argv[2];
+
+    switch (scheduleType)
+    {
+    case 1:
+        HPF();
+        break;
+    case 2:
+        SRTN();
+        break;
+    case 3:
+        RR(scheduleArgument);
+        break;
+    }
 
     // habd zone
     while (1)
@@ -86,4 +100,16 @@ void handler(int signum)
         recvProcess(&tempProcess);
         enqueue(&processes, tempProcess);
     }
+}
+
+void HPF()
+{
+}
+
+void SRTN()
+{
+}
+
+void RR()
+{
 }

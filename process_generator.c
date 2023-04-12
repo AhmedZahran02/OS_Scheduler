@@ -107,10 +107,10 @@ Process *readFile(char *file, int *size)
         {
             int count;
             char **output = split(line, "\t", &count);
-            int id = atoi(output[0]) ,arrival = atoi(output[1]) , runTime = atoi(output[2]) , priority = atoi(output[3]);
-            processArray[(*size) - 1] = createProcess(id , arrival , runTime , priority);
-            printf("Asdsdsdsd") ;
-            ProcessFinished(processArray[(*size) - 1]) ;
+            int id = atoi(output[0]), arrival = atoi(output[1]), runTime = atoi(output[2]), priority = atoi(output[3]);
+            processArray[(*size) - 1] = createProcess(id, arrival, runTime, priority);
+            printf("Asdsdsdsd");
+            ProcessFinished(processArray[(*size) - 1]);
         }
         (*size)++;
     }
@@ -306,5 +306,5 @@ void clearResources(int signum)
     shmctl(shm_Id, IPC_RMID, NULL);
     destroyClk(true);
     killpg(getpgrp(), SIGKILL);
-    kill(getpid() ,SIGKILL);
+    kill(getpid(), SIGKILL);
 }
