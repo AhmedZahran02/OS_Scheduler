@@ -47,8 +47,8 @@ int main(int argc, char *argv[])
     // 4. Use this function after creating the clock process to initialize clock
     initClk();
     // To get time use this
-    int x = getClk();
-    printf("current time is %d\n", x);
+    // int x = getClk();
+    // printf("current time is %d\n", x);
     // TODO Generation Main Loop
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     initializeShm();
     while (ind < size)
     {
-        x = getClk();
+        int x = getClk();
         int counter = 0;
         while (processArray[ind].arrivalTime == x && ind < size)
         {
@@ -68,13 +68,13 @@ int main(int argc, char *argv[])
         if (counter > 0)
         {
             updateCounter(counter);
-            printf("i will send you a signal so you collect %d processes at %d clock \n", counter, x);
+            printf("i will send you a signal so you collect %d processes at clock = %d \n", counter, x);
             kill(Scheduler_Id, SIGUSR1);
         }
     }
 
     // 7. Clear clock resources
-    destroyClk(true);
+    // destroyClk(true);
 }
 
 Process *readFile(char *file, int *size)
@@ -109,8 +109,7 @@ Process *readFile(char *file, int *size)
             char **output = split(line, "\t", &count);
             int id = atoi(output[0]), arrival = atoi(output[1]), runTime = atoi(output[2]), priority = atoi(output[3]);
             processArray[(*size) - 1] = createProcess(id, arrival, runTime, priority);
-            printf("Asdsdsdsd");
-            ProcessFinished(processArray[(*size) - 1]);
+            // ProcessFinished(processArray[(*size) - 1]);
         }
         (*size)++;
     }
