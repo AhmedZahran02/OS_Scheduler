@@ -139,19 +139,13 @@ void HPF()
                 *shmCurrPrc = runningPrc;
                 if (runningPrc.realID == -1)
                 {
-                    printf("process %d started at time %d \n", runningPrc.id, getClk());
-                    int Process_Id = fork();
-                    if (Process_Id == 0)
-                    {
-                        system("gcc process.c -o process.out");
-                        execl("process.out", "process.c", NULL);
-                    }
-                    shmCurrPrc->realID = Process_Id;
+                    shmCurrPrc->realID = StartProcess(&runningPrc);
                 }
                 else
                 {
-                    printf("process %d cont at time %d \n", runningPrc.id, getClk());
-                    kill(runningPrc.realID, SIGCONT);
+//                    printf("process %d cont at time %d \n", runningPrc.id, getClk());
+//                    kill(runningPrc.realID, SIGCONT);
+                    ContinueProcess(&runningPrc);
                 }
             }
         }
@@ -160,8 +154,9 @@ void HPF()
             
                 tempPrc = *shmCurrPrc;
                 enqueue(&finishedProcesses, tempPrc);
-                shmCurrPrc->realID = -1;
-                printf("process %d finished at time %d \n", shmCurrPrc->id, getClk());
+//                printf("process %d finished at time %d \n", shmCurrPrc->id, getClk());
+            FinishProcess(shmCurrPrc);
+            shmCurrPrc->realID = -1;
         }
 
     }
@@ -218,15 +213,12 @@ void SRTN()
 
                     // printf("Loooool2 \n");
                     // shmCurrProcess->startingTime = getClk();
-
-                    shmCurrProcess->realID =  StartProcess(&currProcess);;
+                    shmCurrProcess->realID =  StartProcess(&currProcess);
                 }
                 else
                 {
                     // resume this procces by send signal to it by the pid
-                    printf("process %d cont at time %d \n", currProcess.id, getClk());
-
-                    kill(currProcess.realID, SIGCONT);
+                    ContinueProcess(&currProcess);
                 }
             }
         }
@@ -286,9 +278,10 @@ void SRTN()
                     {
 
                         // stop the current process and create new on if runtime = remruntime
-                        printf("process %d stoped at time %d \n", shmCurrProcess->id, getClk());
+//                        printf("process %d stoped at time %d \n", shmCurrProcess->id, getClk());
                         // dequeue2(&currProcesses);
-                        kill(shmCurrProcess->realID, SIGSTOP);
+//                        kill(shmCurrProcess->realID, SIGSTOP);
+                        StopProcess(shmCurrProcess);
 
                         tempProcess.id = shmCurrProcess->id;
                         tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
@@ -366,7 +359,6 @@ void RR(int quantum )
         if(shmCurrProcess->realID == -1){ // No current process is running
             if (!isEmpty(&processes)) {
                 Process Current_Process =  dequeue(&processes) ;
-                int current_quantum = min(Current_Process.remRunTime , quantum);
                 if(Current_Process.startingTime == -1){ // If it's the first time to get scheduled
                     last_start = Current_Process.remRunTime ;
                     StartProcess(&Current_Process);
