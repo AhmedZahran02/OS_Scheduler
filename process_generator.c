@@ -226,7 +226,6 @@ char **split(char *string, char *seperators, int *count)
         {
             if (strchr(seperators, string[i]) != NULL)
                 break;
-
             buffer[j] = string[i];
             i++;
             j++;
