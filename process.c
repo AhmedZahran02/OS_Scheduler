@@ -28,6 +28,7 @@ int main(int agrc, char *argv[])
         sleep(1);
         remainingtime--;
         shmCurrProcess->remRunTime = remainingtime;
+        //    printf("%d \n", shmCurrProcess->remRunTime);
     }
 
     // shmCurrProcess->finishTime = getClk();
