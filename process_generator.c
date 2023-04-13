@@ -286,7 +286,8 @@ bool sendProcess(Process *process)
     {
         return false;
     }
-    msgsnd(msg_Id, (void *)process, sizeof(process), IPC_NOWAIT);
+    msgsnd(msg_Id, (void *)process, sizeof(Process), IPC_NOWAIT);
+
     return true;
 }
 

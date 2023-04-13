@@ -45,6 +45,7 @@ int main(int agrc, char *argv[])
                 dequeue(&currProcesses);
                 if (currProcess.realID == -1)
                 {
+                    printf("LOOOOOL");
                     int Process_Id = fork();
                     if (Process_Id == 0)
                     {

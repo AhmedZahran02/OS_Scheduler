@@ -74,16 +74,17 @@ int main(int argc, char *argv[])
                 tempProcess = processes.front->data;
                 dequeue(&processes);
                 printf("process %d is added to system at time %d with realid = %d \n", tempProcess.id, getClk(), tempProcess.realID);
-                insert(&currProcesses, currProcess.remRunTime, tempProcess);
+                insert(&currProcesses, tempProcess.remRunTime, tempProcess);
             }
 
             int currTime = getClk();
             if (shmCurrProcess->realID == -1)
             {
-
+                printf("first stage \n");
                 if (currProcesses.count > 0)
                 {
                     // printf("%d \n", currProcesses.count);
+                    printf("second stage \n");
 
                     currProcess = currProcesses.front->data;
                     dequeue2(&currProcesses);
@@ -92,9 +93,11 @@ int main(int argc, char *argv[])
                     // printf("lol real id %d \n", currProcess.realID);
                     if (currProcess.realID == -1)
                     {
+                        printf("third stage \n");
+
                         // printf("Loooool2 \n");
                         // shmCurrProcess->startingTime = getClk();
-                        printf("process %d started at time %d \n", tempProcess.id, getClk());
+                        printf("process %d started at time %d \n", currProcess.id, getClk());
 
                         int Process_Id = fork();
                         if (Process_Id == 0)
@@ -102,7 +105,7 @@ int main(int argc, char *argv[])
                             system("gcc process.c -o process.out");
                             execl("process.out", "process.c", currProcess.remRunTime, NULL);
                         }
-                        currProcess.realID = Process_Id;
+                        shmCurrProcess->realID = Process_Id;
                     }
                     else
                     {
@@ -257,6 +260,7 @@ bool recvProcess(Process *process)
         return false;
     }
     msgrcv(msg_Id, (void *)process, sizeof(Process), 0, !IPC_NOWAIT);
+    // printf("process %d real id = %d \n", process->id, process->realID);
     return true;
 }
 
