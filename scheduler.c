@@ -111,6 +111,62 @@ void handler(int signum)
 
 void HPF()
 {
+     
+    Process *shmCurrPrc;
+    Process runningPrc;
+    Process tempPrc;
+    struct PriorityQueue2 AvilablPros;
+    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
+    shmCurrPrc = (Process *)shmat(shm_Id, (void *)0, 0);
+
+    AvilablPros = create();
+
+    runningPrc.realID = -1;
+    *shmCurrPrc = runningPrc;
+    while (1)
+    {
+        /* code */
+        while (!isEmpty(&processes) )
+        {
+            Process tempPrc2 = dequeue(&processes);
+            insert(&AvilablPros, tempPrc2.Priority, tempPrc2);
+        }
+        if (shmCurrPrc->realID == -1)
+        {
+            if (AvilablPros.count > 0)
+            {
+
+                runningPrc = dequeue2(&AvilablPros);
+                *shmCurrPrc = runningPrc;
+                if (runningPrc.realID == -1)
+                {
+                    printf("process %d started at time %d \n", runningPrc.id, getClk());
+                    int Process_Id = fork();
+                    if (Process_Id == 0)
+                    {
+                        system("gcc process.c -o process.out");
+                        execl("process.out", "process.c", NULL);
+                    }
+                    shmCurrPrc->realID = Process_Id;
+                }
+                else
+                {
+                    printf("process %d cont at time %d \n", runningPrc.id, getClk());
+                    kill(runningPrc.realID, SIGCONT);
+                }
+            }
+        }
+        else if (shmCurrPrc->remRunTime == 0)
+        {
+            
+                tempPrc = *shmCurrPrc;
+                enqueue(&finishedProcesses, tempPrc);
+                shmCurrPrc->realID = -1;
+                printf("process %d finished at time %d \n", shmCurrPrc->id, getClk());
+        }
+
+    }
+    
 }
 
 void SRTN()
