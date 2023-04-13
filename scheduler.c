@@ -357,7 +357,6 @@ void RR(int quantum )
 {
 
     Process *shmCurrProcess ; Process  currentProcess;
-    // finishedProcesses = createQueue();
     // Getting the current process
     int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
     shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
@@ -379,18 +378,16 @@ void RR(int quantum )
                 }
             }
         }else{
-//            printf("Remaining Time: %d \n" , shmCurrProcess->remRunTime);
-            if(!shmCurrProcess->remRunTime ){
+            if(!shmCurrProcess->remRunTime ){ // Process Finished
                 FinishProcess(shmCurrProcess);
                 enqueue(&finishedProcesses, *shmCurrProcess);
                 shmCurrProcess->realID = -1;
             }
-            else if(last_start - shmCurrProcess->remRunTime  >= quantum && !isEmpty(&processes) ){ // If it still didn't finish
+            else if(last_start - shmCurrProcess->remRunTime  >= quantum && !isEmpty(&processes) ){ // If it still didn't finish but Preemption will occur
                 Process  Cur_Process = *shmCurrProcess;
                 StopProcess(shmCurrProcess);
                 if(shmCurrProcess->remRunTime)enqueue(&processes , Cur_Process);
             }
         }
-
     }
 }

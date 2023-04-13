@@ -138,6 +138,7 @@ int StartProcess(Process * P) {
         execl("process.out", "process.c", NULL);
         // printf("LOOOOOOOOOOOOOOL \n");
     }else P->realID =  Process_Id ;
+    return Process_Id;
 }
 
 void FinishProcess(Process * P) {
@@ -145,7 +146,7 @@ void FinishProcess(Process * P) {
     int wait = P->startingTime - P->arrivalTime ;
     int TA = P->finishTime - P->arrivalTime ;
     double  WTA = TA / P->runTime;
-//    kill(P->realID , SIGKILL);
+    kill(P->realID , SIGINT);
     printf("At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime , wait , TA ,WTA );
 }
 void StopProcess(Process * P){
