@@ -106,6 +106,7 @@ Process createProcess(int id, int arrival, int runTime, int P)
     process.Priority = P;
     process.finishTime = -1;
     process.startingTime = -1;
+    process.remRunTime = runTime;
     process.realID = -1;
     return process;
 }

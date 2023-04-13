@@ -14,8 +14,10 @@ int main(int agrc, char *argv[])
     // remainingtime = ??;
     int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
     shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
-    shmCurrProcess->startingTime = getClk();
+    remainingtime = shmCurrProcess->remRunTime;
 
+    shmCurrProcess->startingTime = getClk();
+    // printf("process id %d start %d reman %d remtime %d realid %d \n", shmCurrProcess->id, shmCurrProcess->startingTime, shmCurrProcess->runTime, shmCurrProcess->remRunTime, shmCurrProcess->realID);
     // if (shmCurrProcess == -1)
     // {
     //     perror("Error in attach in writer");
@@ -28,7 +30,8 @@ int main(int agrc, char *argv[])
         shmCurrProcess->remRunTime = remainingtime;
     }
 
-    shmCurrProcess->finishTime = getClk();
+    // shmCurrProcess->finishTime = getClk();
+    // printf(" process %d terminated \n", shmCurrProcess->id);
 
     // destroyClk(false);
 
