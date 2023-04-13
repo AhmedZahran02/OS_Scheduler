@@ -1,4 +1,5 @@
 #include "headers.h"
+#include "string.h"
 
 int msg_Id = -1;
 int shm_Id = -1;
