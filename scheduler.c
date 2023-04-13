@@ -1,3 +1,4 @@
+
 #include "headers.h"
 #include "queue2.h"
 #include "PriorityQueue2.h"
@@ -36,18 +37,18 @@ int main(int argc, char *argv[])
     int scheduleType = *argv[1];
     int scheduleArgument = *argv[2];
 
-    switch (scheduleType)
-    {
-    case 1:
-        HPF();
-        break;
-    case 2:
-        SRTN();
-        break;
-    case 3:
-        RR(scheduleArgument);
-        break;
-    }
+    // switch (scheduleType)
+    // {
+    // case 1:
+    //     HPF();
+    //     break;
+    // case 2:
+    //     SRTN();
+    //     break;
+    // case 3:
+    //     RR(scheduleArgument);
+    //     break;
+    // }
 
     // habd zone
     // printf("process is added to system at time \n");
@@ -55,12 +56,12 @@ int main(int argc, char *argv[])
     if (scheduleType == 2)
     {
         // printf("process is added to system at time 3333\n");
-
-        shmCurrProcess = shmat(CONNKEY + 1, (void *)0, 0);
+        int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
+        shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
         currProcesses = create();
         // finishedProcesses = createQueue();
         currProcess.id = -1;
-        // shmCurrProcess->id = -1;
+        *shmCurrProcess = currProcess;
 
         while (1)
         {
@@ -72,123 +73,129 @@ int main(int argc, char *argv[])
 
                 tempProcess = processes.front->data;
                 dequeue(&processes);
-                printf("process %d is added to system at time %d \n", tempProcess.id, getClk());
-                insert(&currProcesses, currProcess.remRunTime, currProcess);
+                printf("process %d is added to system at time %d with realid = %d \n", tempProcess.id, getClk(), tempProcess.realID);
+                insert(&currProcesses, currProcess.remRunTime, tempProcess);
             }
 
-            // int currTime = getClk();
-            // if (shmCurrProcess->id == -1)
-            // {
-            //     if (currProcesses.count > 0)
-            //     {
-            //         currProcess = currProcesses.front->data;
-            //         *shmCurrProcess = currProcess;
-            //         dequeue(&currProcesses);
-            //         if (currProcess.realID == -1)
-            //         {
-            //             shmCurrProcess->startingTime = getClk();
-            //             printf("process %d started at time %d ", tempProcess.id, getClk());
+            int currTime = getClk();
+            if (shmCurrProcess->realID == -1)
+            {
 
-            //             int Process_Id = fork();
-            //             if (Process_Id == 0)
-            //             {
-            //                 system("gcc process.c -o process.out");
-            //                 execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //             }
-            //             currProcess.realID = Process_Id;
-            //         }
-            //         else
-            //         {
-            //             // resume this procces by send signal to it by the pid
-            //             kill(SIGCONT, currProcess.realID);
-            //         }
-            //     }
-            // }
-            // else
-            // {
-            //     if (shmCurrProcess->remRunTime == 0)
-            //     {
+                if (currProcesses.count > 0)
+                {
+                    // printf("%d \n", currProcesses.count);
 
-            //         tempProcess.id = shmCurrProcess->id;
-            //         tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-            //         tempProcess.finishTime = shmCurrProcess->finishTime;
-            //         tempProcess.Priority = shmCurrProcess->Priority;
-            //         tempProcess.realID = shmCurrProcess->realID;
-            //         tempProcess.remRunTime = shmCurrProcess->remRunTime;
-            //         tempProcess.startingTime = shmCurrProcess->startingTime;
-            //         tempProcess.runTime = shmCurrProcess->runTime;
-            //         if (currProcesses.count > 0)
-            //         {
-            //             currProcess = currProcesses.front->data;
-            //             *shmCurrProcess = currProcess;
-            //             dequeue(&currProcesses);
+                    currProcess = currProcesses.front->data;
+                    dequeue2(&currProcesses);
+                    *shmCurrProcess = currProcess;
 
-            //             if (currProcess.realID == -1)
-            //             {
-            //                 shmCurrProcess->startingTime = getClk();
-            //                 printf("process %d started at time %d ", tempProcess.id, getClk());
+                    // printf("lol real id %d \n", currProcess.realID);
+                    if (currProcess.realID == -1)
+                    {
+                        // printf("Loooool2 \n");
+                        // shmCurrProcess->startingTime = getClk();
+                        printf("process %d started at time %d \n", tempProcess.id, getClk());
 
-            //                 int Process_Id = fork();
-            //                 if (Process_Id == 0)
-            //                 {
-            //                     system("gcc process.c -o process.out");
-            //                     execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //                 }
-            //                 currProcess.realID = Process_Id;
-            //             }
-            //             else
-            //             {
-            //                 // resume this procces by send signal to it by the pid
-            //                 kill(SIGCONT, currProcess.realID);
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         if (currProcesses.count > 0)
-            //         {
-            //             currProcess = currProcesses.front->data;
-            //             if (shmCurrProcess->remRunTime > currProcess.remRunTime)
-            //             {
-            //                 // stop the current process and create new on if runtime = remruntime
-            //                 printf("process %d stoped at time %d ", shmCurrProcess->id, getClk());
+                        int Process_Id = fork();
+                        if (Process_Id == 0)
+                        {
+                            system("gcc process.c -o process.out");
+                            execl("process.out", "process.c", currProcess.remRunTime, NULL);
+                        }
+                        currProcess.realID = Process_Id;
+                    }
+                    else
+                    {
+                        // resume this procces by send signal to it by the pid
+                        kill(SIGCONT, currProcess.realID);
+                    }
+                }
+            }
+            else
+            {
+                // if (shmCurrProcess->remRunTime == 0)
+                // {
 
-            //                 kill(SIGSTOP, shmCurrProcess->realID);
+                //     tempProcess.id = shmCurrProcess->id;
+                //     tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+                //     tempProcess.finishTime = shmCurrProcess->finishTime;
+                //     tempProcess.Priority = shmCurrProcess->Priority;
+                //     tempProcess.realID = shmCurrProcess->realID;
+                //     tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                //     tempProcess.startingTime = shmCurrProcess->startingTime;
+                //     tempProcess.runTime = shmCurrProcess->runTime;
+                //     if (currProcesses.count > 0)
+                //     {
+                //         currProcess = currProcesses.front->data;
+                //         *shmCurrProcess = currProcess;
+                //         dequeue(&currProcesses);
 
-            //                 tempProcess.id = shmCurrProcess->id;
-            //                 tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-            //                 tempProcess.finishTime = shmCurrProcess->finishTime;
-            //                 tempProcess.Priority = shmCurrProcess->Priority;
-            //                 tempProcess.realID = shmCurrProcess->realID;
-            //                 tempProcess.remRunTime = shmCurrProcess->remRunTime;
-            //                 tempProcess.startingTime = shmCurrProcess->startingTime;
-            //                 tempProcess.runTime = shmCurrProcess->runTime;
+                //         if (currProcess.realID == -1)
+                //         {
+                //             shmCurrProcess->startingTime = getClk();
+                //             printf("process %d started at time %d ", tempProcess.id, getClk());
 
-            //                 insert(&currProcesses, tempProcess.remRunTime, tempProcess);
-            //                 if (currProcess.realID == -1)
-            //                 {
-            //                     shmCurrProcess->startingTime = getClk();
-            //                     printf("process %d started at time %d ", tempProcess.id, getClk());
+                //             int Process_Id = fork();
+                //             if (Process_Id == 0)
+                //             {
+                //                 system("gcc process.c -o process.out");
+                //                 execl("process.out", "process.c", currProcess.remRunTime, NULL);
+                //             }
+                //             currProcess.realID = Process_Id;
+                //         }
+                //         else
+                //         {
+                //             // resume this procces by send signal to it by the pid
+                //             kill(SIGCONT, currProcess.realID);
+                //         }
+                //     }
+                // }
+                // else
+                // {
+                //     if (currProcesses.count > 0)
+                //     {
+                //         currProcess = currProcesses.front->data;
+                //         if (shmCurrProcess->remRunTime > currProcess.remRunTime)
+                //         {
+                //             // stop the current process and create new on if runtime = remruntime
+                //             printf("process %d stoped at time %d ", shmCurrProcess->id, getClk());
 
-            //                     int Process_Id = fork();
-            //                     if (Process_Id == 0)
-            //                     {
-            //                         system("gcc process.c -o process.out");
-            //                         execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //                     }
-            //                     currProcess.realID = Process_Id;
-            //                 }
-            //                 else
-            //                 {
-            //                     // resume this procces by send signal to it by the pid
-            //                     printf("process %d cont at time %d ", currProcess.id, getClk());
+                //             kill(SIGSTOP, shmCurrProcess->realID);
 
-            //                     kill(SIGCONT, currProcess.realID);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+                //             tempProcess.id = shmCurrProcess->id;
+                //             tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+                //             tempProcess.finishTime = shmCurrProcess->finishTime;
+                //             tempProcess.Priority = shmCurrProcess->Priority;
+                //             tempProcess.realID = shmCurrProcess->realID;
+                //             tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                //             tempProcess.startingTime = shmCurrProcess->startingTime;
+                //             tempProcess.runTime = shmCurrProcess->runTime;
+
+                //             insert(&currProcesses, tempProcess.remRunTime, tempProcess);
+                //             if (currProcess.realID == -1)
+                //             {
+                //                 shmCurrProcess->startingTime = getClk();
+                //                 printf("process %d started at time %d ", tempProcess.id, getClk());
+
+                //                 int Process_Id = fork();
+                //                 if (Process_Id == 0)
+                //                 {
+                //                     system("gcc process.c -o process.out");
+                //                     execl("process.out", "process.c", currProcess.remRunTime, NULL);
+                //                 }
+                //                 currProcess.realID = Process_Id;
+                //             }
+                //             else
+                //             {
+                //                 // resume this procces by send signal to it by the pid
+                //                 printf("process %d cont at time %d ", currProcess.id, getClk());
+
+                //                 kill(SIGCONT, currProcess.realID);
+                //             }
+                //         }
+                //     }
+                // }
+            }
         }
 
         /*
@@ -249,7 +256,7 @@ bool recvProcess(Process *process)
     {
         return false;
     }
-    msgrcv(msg_Id, (void *)process, sizeof(process), 0, !IPC_NOWAIT);
+    msgrcv(msg_Id, (void *)process, sizeof(Process), 0, !IPC_NOWAIT);
     return true;
 }
 
