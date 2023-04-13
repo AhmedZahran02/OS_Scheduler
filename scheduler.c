@@ -118,9 +118,7 @@ void HPF()
     struct PriorityQueue2 AvilablPros;
     int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
     shmCurrPrc = (Process *)shmat(shm_Id, (void *)0, 0);
-
     AvilablPros = create();
-
     runningPrc.realID = -1;
     *shmCurrPrc = runningPrc;
     while (1)
@@ -219,7 +217,7 @@ void SRTN()
 
                     // printf("Loooool2 \n");
                     // shmCurrProcess->startingTime = getClk();
-                    printf("process %d started at time %d \n", currProcess.id, getClk());
+                    StartProcess(&currProcess);
 
                     int Process_Id = fork();
                     if (Process_Id == 0)
@@ -255,8 +253,8 @@ void SRTN()
                 tempProcess.runTime = shmCurrProcess->runTime;
                 enqueue(&finishedProcesses, tempProcess);
                 shmCurrProcess->realID = -1;
-                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
-
+//                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
+                FinishProcess(shmCurrProcess);
                 // if (currProcesses.count > 0)
                 // {
                 //     currProcess = currProcesses.front->data;
@@ -363,6 +361,30 @@ void SRTN()
     */
 }
 
-void RR()
+void RR(int quantum )
 {
+
+    Process *shmCurrProcess;
+    // Getting the current process
+    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
+    shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
+
+    while (true){
+        struct Queue2 Current_Quantum_Processes ;  // A temp queue
+        // Inserting all the available processes in the quantum queue
+        if (!isEmpty(&processes)) {
+            struct Process Current_Process = processes.front->data;
+            dequeue(&processes) ;
+            Current_Process.remRunTime -= min(Current_Process.remRunTime , quantum);
+            if(Current_Process.startingTime == -1){ // If it's the first time to get scheduled
+                StartProcess(&Current_Process);
+            }
+            if(Current_Process.remRunTime){ // If it still didn't finish
+                enqueue(& processes , Current_Process);
+            }else{
+                FinishProcess(&Current_Process);
+                enqueue(& finishedProcesses , Current_Process);
+            }
+        }
+    }
 }

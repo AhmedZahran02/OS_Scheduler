@@ -127,3 +127,15 @@ void ProcessFinished(Process process)
     strcpy(str, " process \n");
     fclose(file_ptr);
 }
+void StartProcess(Process * P) {
+    P->startingTime = getClk() ;
+    printf("At time %d process %d started arr: %d total: %d remaining: %d wait: \n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime);
+}
+
+void FinishProcess(Process * P) {
+    P->finishTime = getClk() ;
+    int wait = P->startingTime - P->arrivalTime ;
+    int TA = P->finishTime - P->arrivalTime ;
+    double  WTA = TA / P->runTime;
+    printf("At time %d process %d finished arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime , wait , TA ,WTA );
+}
