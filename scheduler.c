@@ -1,3 +1,4 @@
+
 #include "headers.h"
 #include "queue2.h"
 #include "PriorityQueue2.h"
@@ -14,11 +15,7 @@ void RR();
 int getCounter();
 
 struct Queue2 processes;
-Process *shmCurrProcess;
-
-struct PriorityQueue2 currProcesses;
-Process currProcess;
-Process tempProcess;
+struct Queue2 finishedProcesses;
 
 void handler(int signum);
 
@@ -50,174 +47,10 @@ int main(int argc, char *argv[])
     }
 
     // habd zone
-    // printf("process is added to system at time \n");
-
-    if (scheduleType == 2)
-    {
-        // printf("process is added to system at time 3333\n");
-
-        shmCurrProcess = shmat(CONNKEY + 1, (void *)0, 0);
-        currProcesses = create();
-        // finishedProcesses = createQueue();
-        currProcess.id = -1;
-        // shmCurrProcess->id = -1;
-
-        while (1)
-        {
-            // printf("process is added to system at time 4444\n");
-
-            while (!isEmpty(&processes))
-            {
-                // printf("process is added to system at time 555\n");
-
-                tempProcess = processes.front->data;
-                dequeue(&processes);
-                printf("process %d is added to system at time %d \n", tempProcess.id, getClk());
-                insert(&currProcesses, currProcess.remRunTime, currProcess);
-            }
-
-            // int currTime = getClk();
-            // if (shmCurrProcess->id == -1)
-            // {
-            //     if (currProcesses.count > 0)
-            //     {
-            //         currProcess = currProcesses.front->data;
-            //         *shmCurrProcess = currProcess;
-            //         dequeue(&currProcesses);
-            //         if (currProcess.realID == -1)
-            //         {
-            //             shmCurrProcess->startingTime = getClk();
-            //             printf("process %d started at time %d ", tempProcess.id, getClk());
-
-            //             int Process_Id = fork();
-            //             if (Process_Id == 0)
-            //             {
-            //                 system("gcc process.c -o process.out");
-            //                 execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //             }
-            //             currProcess.realID = Process_Id;
-            //         }
-            //         else
-            //         {
-            //             // resume this procces by send signal to it by the pid
-            //             kill(SIGCONT, currProcess.realID);
-            //         }
-            //     }
-            // }
-            // else
-            // {
-            //     if (shmCurrProcess->remRunTime == 0)
-            //     {
-
-            //         tempProcess.id = shmCurrProcess->id;
-            //         tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-            //         tempProcess.finishTime = shmCurrProcess->finishTime;
-            //         tempProcess.Priority = shmCurrProcess->Priority;
-            //         tempProcess.realID = shmCurrProcess->realID;
-            //         tempProcess.remRunTime = shmCurrProcess->remRunTime;
-            //         tempProcess.startingTime = shmCurrProcess->startingTime;
-            //         tempProcess.runTime = shmCurrProcess->runTime;
-            //         if (currProcesses.count > 0)
-            //         {
-            //             currProcess = currProcesses.front->data;
-            //             *shmCurrProcess = currProcess;
-            //             dequeue(&currProcesses);
-
-            //             if (currProcess.realID == -1)
-            //             {
-            //                 shmCurrProcess->startingTime = getClk();
-            //                 printf("process %d started at time %d ", tempProcess.id, getClk());
-
-            //                 int Process_Id = fork();
-            //                 if (Process_Id == 0)
-            //                 {
-            //                     system("gcc process.c -o process.out");
-            //                     execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //                 }
-            //                 currProcess.realID = Process_Id;
-            //             }
-            //             else
-            //             {
-            //                 // resume this procces by send signal to it by the pid
-            //                 kill(SIGCONT, currProcess.realID);
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         if (currProcesses.count > 0)
-            //         {
-            //             currProcess = currProcesses.front->data;
-            //             if (shmCurrProcess->remRunTime > currProcess.remRunTime)
-            //             {
-            //                 // stop the current process and create new on if runtime = remruntime
-            //                 printf("process %d stoped at time %d ", shmCurrProcess->id, getClk());
-
-            //                 kill(SIGSTOP, shmCurrProcess->realID);
-
-            //                 tempProcess.id = shmCurrProcess->id;
-            //                 tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-            //                 tempProcess.finishTime = shmCurrProcess->finishTime;
-            //                 tempProcess.Priority = shmCurrProcess->Priority;
-            //                 tempProcess.realID = shmCurrProcess->realID;
-            //                 tempProcess.remRunTime = shmCurrProcess->remRunTime;
-            //                 tempProcess.startingTime = shmCurrProcess->startingTime;
-            //                 tempProcess.runTime = shmCurrProcess->runTime;
-
-            //                 insert(&currProcesses, tempProcess.remRunTime, tempProcess);
-            //                 if (currProcess.realID == -1)
-            //                 {
-            //                     shmCurrProcess->startingTime = getClk();
-            //                     printf("process %d started at time %d ", tempProcess.id, getClk());
-
-            //                     int Process_Id = fork();
-            //                     if (Process_Id == 0)
-            //                     {
-            //                         system("gcc process.c -o process.out");
-            //                         execl("process.out", "process.c", currProcess.remRunTime, NULL);
-            //                     }
-            //                     currProcess.realID = Process_Id;
-            //                 }
-            //                 else
-            //                 {
-            //                     // resume this procces by send signal to it by the pid
-            //                     printf("process %d cont at time %d ", currProcess.id, getClk());
-
-            //                     kill(SIGCONT, currProcess.realID);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-        }
-
-        /*
-
-        there is a shared memory that contains the remaining time of running process and its id
-        this memory get updated in process.c
-        there is a variable contains the remaining time of the running process
-        you have array of structs of all processes
-        you have array of structs of current processes in the system
-
-        get the current clock
-        loop on all processes to push the ones that arrival time less than current time
-        loop on current processes to get the min running time one
-        if current running process equall null {
-            run the choosed pro
-        }
-
-        int clk = getclk();
-
-        loop on the array
-
-        get the min remaining time
-
-        */
-    }
-    while (1)
-    {
-        // donot kill my clock plz
-    }
+    // while (1)
+    // {
+    //     // donot kill my clock plz
+    // }
     // end of habd zone
 
     destroyClk(true);
@@ -249,7 +82,8 @@ bool recvProcess(Process *process)
     {
         return false;
     }
-    msgrcv(msg_Id, (void *)process, sizeof(process), 0, !IPC_NOWAIT);
+    msgrcv(msg_Id, (void *)process, sizeof(Process), 0, !IPC_NOWAIT);
+    // printf("process %d real id = %d \n", process->id, process->realID);
     return true;
 }
 
@@ -281,6 +115,196 @@ void HPF()
 
 void SRTN()
 {
+    Process *shmCurrProcess;
+    Process currProcess;
+    Process tempProcess;
+    struct PriorityQueue2 currProcesses;
+
+    // printf("process is added to system at time 3333\n");
+    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
+    shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
+    currProcesses = create();
+    // finishedProcesses = createQueue();
+    currProcess.realID = -1;
+    *shmCurrProcess = currProcess;
+
+    while (1)
+    {
+        // printf("process is added to system at time 4444\n");
+        while (!isEmpty(&processes))
+        {
+            // printf("process is added to system at time 555\n");
+
+            tempProcess = processes.front->data;
+            dequeue(&processes);
+            // printf("process %d is added to system at time %d with realid = %d \n", tempProcess.id, getClk(), tempProcess.realID);
+            insert(&currProcesses, tempProcess.remRunTime, tempProcess);
+        }
+
+        // int currTime = getClk();
+        // printf("shmCurrProcess->realID = %d \n", shmCurrProcess->realID);
+        if (shmCurrProcess->realID == -1)
+        {
+            // printf("first stage \n");
+            if (currProcesses.count > 0)
+            {
+                // printf("%d \n", currProcesses.count);
+                //  printf("second stage \n");
+
+                currProcess = currProcesses.front->data;
+                // printf("pid %d \n", currProcess.id);
+                dequeue2(&currProcesses);
+                *shmCurrProcess = currProcess;
+
+                // printf("lol real id %d \n", currProcess.realID);
+                if (currProcess.realID == -1)
+                {
+                    // printf("third stage \n");
+
+                    // printf("Loooool2 \n");
+                    // shmCurrProcess->startingTime = getClk();
+                    printf("process %d started at time %d \n", currProcess.id, getClk());
+
+                    int Process_Id = fork();
+                    if (Process_Id == 0)
+                    {
+                        // printf("LOOOOOOOOOOOOOOL \n");
+                        system("gcc process.c -o process.out");
+                        // printf("LOOOOOOOOOOOOOOL \n");
+                        execl("process.out", "process.c", NULL);
+                        // printf("LOOOOOOOOOOOOOOL \n");
+                    }
+                    shmCurrProcess->realID = Process_Id;
+                }
+                else
+                {
+                    // resume this procces by send signal to it by the pid
+                    printf("process %d cont at time %d \n", currProcess.id, getClk());
+
+                    kill(currProcess.realID, SIGCONT);
+                }
+            }
+        }
+        else
+        {
+            if (shmCurrProcess->remRunTime == 0)
+            {
+                tempProcess.id = shmCurrProcess->id;
+                tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+                tempProcess.finishTime = shmCurrProcess->finishTime;
+                tempProcess.Priority = shmCurrProcess->Priority;
+                tempProcess.realID = shmCurrProcess->realID;
+                tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                tempProcess.startingTime = shmCurrProcess->startingTime;
+                tempProcess.runTime = shmCurrProcess->runTime;
+                enqueue(&finishedProcesses, tempProcess);
+                shmCurrProcess->realID = -1;
+                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
+
+                // if (currProcesses.count > 0)
+                // {
+                //     currProcess = currProcesses.front->data;
+                //     *shmCurrProcess = currProcess;
+                //     dequeue2(&currProcesses);
+
+                //     if (currProcess.realID == -1)
+                //     {
+                //         shmCurrProcess->startingTime = getClk();
+                //         printf("process %d started at time %d ", tempProcess.id, getClk());
+
+                //         int Process_Id = fork();
+                //         if (Process_Id == 0)
+                //         {
+                //             system("gcc process.c -o process.out");
+                //             execl("process.out", "process.c", currProcess.remRunTime, NULL);
+                //         }
+                //         currProcess.realID = Process_Id;
+                //     }
+                //     else
+                //     {
+                //         // resume this procces by send signal to it by the pid
+                //         kill(SIGCONT, currProcess.realID);
+                //     }
+                // }
+                // else
+                // {
+                //     shmCurrProcess->realID = -1;
+                // }
+            }
+            else
+            {
+                if (currProcesses.count > 0)
+                {
+                    currProcess = currProcesses.front->data;
+                    if (shmCurrProcess->remRunTime > currProcess.remRunTime)
+                    {
+
+                        // stop the current process and create new on if runtime = remruntime
+                        printf("process %d stoped at time %d \n", shmCurrProcess->id, getClk());
+                        // dequeue2(&currProcesses);
+                        kill(shmCurrProcess->realID, SIGSTOP);
+
+                        tempProcess.id = shmCurrProcess->id;
+                        tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+                        tempProcess.finishTime = shmCurrProcess->finishTime;
+                        tempProcess.Priority = shmCurrProcess->Priority;
+                        tempProcess.realID = shmCurrProcess->realID;
+                        tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                        tempProcess.startingTime = shmCurrProcess->startingTime;
+                        tempProcess.runTime = shmCurrProcess->runTime;
+
+                        insert(&currProcesses, tempProcess.remRunTime, tempProcess);
+                        shmCurrProcess->realID = -1;
+
+                        // if (currProcess.realID == -1)
+                        // {
+                        //     shmCurrProcess->startingTime = getClk();
+                        //     printf("process %d started at time %d ", tempProcess.id, getClk());
+
+                        //     int Process_Id = fork();
+                        //     if (Process_Id == 0)
+                        //     {
+                        //         system("gcc process.c -o process.out");
+                        //         execl("process.out", "process.c", NULL);
+                        //     }
+                        //     currProcess.realID = Process_Id;
+                        // }
+                        // else
+                        // {
+                        //     // resume this procces by send signal to it by the pid
+                        //     printf("process %d cont at time %d ", currProcess.id, getClk());
+
+                        //     kill(SIGCONT, currProcess.realID);
+                        // }
+                    }
+                }
+            }
+            // printf("%d \n", shmCurrProcess->realID);
+        }
+    }
+
+    /*
+
+    there is a shared memory that contains the remaining time of running process and its id
+    this memory get updated in process.c
+    there is a variable contains the remaining time of the running process
+    you have array of structs of all processes
+    you have array of structs of current processes in the system
+
+    get the current clock
+    loop on all processes to push the ones that arrival time less than current time
+    loop on current processes to get the min running time one
+    if current running process equall null {
+        run the choosed pro
+    }
+
+    int clk = getclk();
+
+    loop on the array
+
+    get the min remaining time
+
+    */
 }
 
 void RR()

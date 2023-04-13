@@ -77,7 +77,8 @@ int main(int argc, char *argv[])
     // destroyClk(true);
 
     // habd zone
-
+    int status;
+    waitpid(-1, &status, 0);
     // end of habd zone
 }
 
@@ -286,7 +287,8 @@ bool sendProcess(Process *process)
     {
         return false;
     }
-    msgsnd(msg_Id, (void *)process, sizeof(process), IPC_NOWAIT);
+    msgsnd(msg_Id, (void *)process, sizeof(Process), IPC_NOWAIT);
+
     return true;
 }
 
