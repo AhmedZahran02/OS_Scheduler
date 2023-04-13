@@ -77,7 +77,8 @@ int main(int argc, char *argv[])
     // destroyClk(true);
 
     // habd zone
-
+    int status;
+    waitpid(-1, &status, 0);
     // end of habd zone
 }
 
