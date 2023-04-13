@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     initClk();
     signal(SIGUSR1, handler);
     processes = createQueue();
+    finishedProcesses = createQueue();
     initializeMsgQueue();
     initializeShm();
     // TODO implement the scheduler :)
@@ -217,18 +218,8 @@ void SRTN()
 
                     // printf("Loooool2 \n");
                     // shmCurrProcess->startingTime = getClk();
-                    StartProcess(&currProcess);
 
-                    int Process_Id = fork();
-                    if (Process_Id == 0)
-                    {
-                        // printf("LOOOOOOOOOOOOOOL \n");
-                        system("gcc process.c -o process.out");
-                        // printf("LOOOOOOOOOOOOOOL \n");
-                        execl("process.out", "process.c", NULL);
-                        // printf("LOOOOOOOOOOOOOOL \n");
-                    }
-                    shmCurrProcess->realID = Process_Id;
+                    shmCurrProcess->realID =  StartProcess(&currProcess);;
                 }
                 else
                 {
@@ -252,9 +243,10 @@ void SRTN()
                 tempProcess.startingTime = shmCurrProcess->startingTime;
                 tempProcess.runTime = shmCurrProcess->runTime;
                 enqueue(&finishedProcesses, tempProcess);
-                shmCurrProcess->realID = -1;
 //                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
                 FinishProcess(shmCurrProcess);
+                shmCurrProcess->realID = -1;
+
                 // if (currProcesses.count > 0)
                 // {
                 //     currProcess = currProcesses.front->data;
@@ -364,27 +356,41 @@ void SRTN()
 void RR(int quantum )
 {
 
-    Process *shmCurrProcess;
+    Process *shmCurrProcess ; Process  currentProcess;
+    // finishedProcesses = createQueue();
     // Getting the current process
     int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
     shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
-
+    shmCurrProcess->realID = -1;
+    int last_start = -1 ;
     while (true){
-        struct Queue2 Current_Quantum_Processes ;  // A temp queue
-        // Inserting all the available processes in the quantum queue
-        if (!isEmpty(&processes)) {
-            struct Process Current_Process = processes.front->data;
-            dequeue(&processes) ;
-            Current_Process.remRunTime -= min(Current_Process.remRunTime , quantum);
-            if(Current_Process.startingTime == -1){ // If it's the first time to get scheduled
-                StartProcess(&Current_Process);
+        if(shmCurrProcess->realID == -1){ // No current process is running
+            if (!isEmpty(&processes)) {
+                Process Current_Process =  dequeue(&processes) ;
+                int current_quantum = min(Current_Process.remRunTime , quantum);
+                if(Current_Process.startingTime == -1){ // If it's the first time to get scheduled
+                    last_start = Current_Process.remRunTime ;
+                    StartProcess(&Current_Process);
+                    *shmCurrProcess =  Current_Process;
+                }else{ // It started before so let's make it continue
+                    ContinueProcess(&Current_Process );
+                    last_start = Current_Process.remRunTime ;
+                    *shmCurrProcess = Current_Process;
+                }
             }
-            if(Current_Process.remRunTime){ // If it still didn't finish
-                enqueue(& processes , Current_Process);
-            }else{
-                FinishProcess(&Current_Process);
-                enqueue(& finishedProcesses , Current_Process);
+        }else{
+//            printf("Remaining Time: %d \n" , shmCurrProcess->remRunTime);
+            if(!shmCurrProcess->remRunTime ){
+                FinishProcess(shmCurrProcess);
+                enqueue(&finishedProcesses, *shmCurrProcess);
+                shmCurrProcess->realID = -1;
+            }
+            else if(last_start - shmCurrProcess->remRunTime  >= quantum && !isEmpty(&processes) ){ // If it still didn't finish
+                Process  Cur_Process = *shmCurrProcess;
+                StopProcess(shmCurrProcess);
+                if(shmCurrProcess->remRunTime)enqueue(&processes , Cur_Process);
             }
         }
+
     }
 }

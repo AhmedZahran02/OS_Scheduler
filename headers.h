@@ -127,9 +127,17 @@ void ProcessFinished(Process process)
     strcpy(str, " process \n");
     fclose(file_ptr);
 }
-void StartProcess(Process * P) {
-    P->startingTime = getClk() ;
+int StartProcess(Process * P) {
     printf("At time %d process %d started arr: %d total: %d remaining: %d wait: \n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime);
+    int Process_Id = fork();
+    if (Process_Id == 0)
+    {
+        // printf("LOOOOOOOOOOOOOOL \n");
+        system("gcc process.c -o process.out");
+        // printf("LOOOOOOOOOOOOOOL \n");
+        execl("process.out", "process.c", NULL);
+        // printf("LOOOOOOOOOOOOOOL \n");
+    }else P->realID =  Process_Id ;
 }
 
 void FinishProcess(Process * P) {
@@ -137,5 +145,16 @@ void FinishProcess(Process * P) {
     int wait = P->startingTime - P->arrivalTime ;
     int TA = P->finishTime - P->arrivalTime ;
     double  WTA = TA / P->runTime;
+//    kill(P->realID , SIGKILL);
     printf("At time %d process %d finished arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime , wait , TA ,WTA );
+}
+void StopProcess(Process * P){
+    int wait = P->startingTime - P->arrivalTime ;
+    printf("At time %d process %d stopped arr: %d total: %d remaining: %d wait: %d \n", getClk() , P->id ,P->arrivalTime ,  P->runTime , P->remRunTime , wait );
+    kill(P->realID, SIGSTOP);
+    P->realID = -1;
+}
+void ContinueProcess(Process * P){
+    printf("process %d cont at time %d \n", P->id, getClk());
+    kill(P->realID, SIGCONT);
 }
