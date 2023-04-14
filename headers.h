@@ -143,7 +143,13 @@ int StartProcess(Process *P)
         P->realID = Process_Id;
     return Process_Id;
 }
-
+FILE*  OpenFile(){
+    FILE *out_file = fopen("scheduler_log.txt", "ab"); // write only
+    return  out_file;
+}
+void  CloseFile(FILE * fp){
+    fclose(fp);
+}
 void FinishProcess(Process *P)
 {
     P->finishTime = getClk();
@@ -151,17 +157,27 @@ void FinishProcess(Process *P)
     int TA = P->finishTime - P->arrivalTime;
     double WTA = TA / P->runTime;
     kill(P->realID, SIGINT);
+    FILE  * fptr = OpenFile();
     printf("At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, WTA);
+    fprintf(fptr , "At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, WTA);
+    CloseFile(fptr);
 }
 void StopProcess(Process *P)
 {
     int wait = P->startingTime - P->arrivalTime;
+    FILE  * fptr = OpenFile();
     printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+    fprintf(fptr, "At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+    CloseFile(fptr);
     kill(P->realID, SIGSTOP);
     P->realID = -1;
 }
 void ContinueProcess(Process *P)
 {
     printf("At time %d process %d CONTINUED arr: %d total: %d remaining: %d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
+    FILE  * fptr = OpenFile();
+    fprintf( fptr, "At time %d process %d CONTINUED arr: %d total: %d remaining: %d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
+    CloseFile(fptr);
     kill(P->realID, SIGCONT);
 }
+

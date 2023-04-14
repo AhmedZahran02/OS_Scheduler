@@ -1,0 +1,16 @@
+At time 23 process 6 FINISHED arr: 15 total: 7 remaining: 0 wait: 1 TA: 8 WTA : 1.000000
+At time 4 process 1 STOPPED arr: 2 total: 2 remaining: 0 wait: 0 
+At time 6 process 2 STOPPED arr: 4 total: 5 remaining: 3 wait: 0 
+At time 8 process 3 STOPPED arr: 4 total: 4 remaining: 2 wait: 2 
+At time 8 process 2 CONTINUED arr: 4 total: 5 remaining: 3  
+At time 9 process 2 STOPPED arr: 4 total: 5 remaining: 1 wait: 0 
+At time 9 process 3 CONTINUED arr: 4 total: 4 remaining: 2  
+At time 10 process 3 FINISHED arr: 4 total: 4 remaining: 0 wait: 2 TA: 6 WTA : 1.000000
+At time 12 process 4 STOPPED arr: 9 total: 3 remaining: 1 wait: 1 
+At time 12 process 2 CONTINUED arr: 4 total: 5 remaining: 1  
+At time 12 process 2 FINISHED arr: 4 total: 5 remaining: 0 wait: 0 TA: 8 WTA : 1.000000
+At time 14 process 5 STOPPED arr: 12 total: 9 remaining: 7 wait: 0 
+At time 14 process 4 CONTINUED arr: 9 total: 3 remaining: 1  
+At time 14 process 4 FINISHED arr: 9 total: 3 remaining: 0 wait: 1 TA: 5 WTA : 1.000000
+At time 14 process 5 CONTINUED arr: 12 total: 9 remaining: 7  
+At time 16 process 5 STOPPED arr: 12 total: 9 remaining: 5 wait: 0 
