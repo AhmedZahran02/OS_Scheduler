@@ -97,6 +97,7 @@ int max(int x, int y)
         return x;
     return y;
 }
+
 Process createProcess(int id, int arrival, int runTime, int P)
 {
     Process process;
@@ -129,15 +130,13 @@ void ProcessFinished(Process process)
 }
 int StartProcess(Process *P)
 {
-    printf("At time %d process %d STARTED arr: %d total: %d remaining: %d wait: \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
+    int wait = getClk() - P->arrivalTime;
+    printf("At time %d process %d STARTED arr: %d total: %d remaining: %d wait:%d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
     int Process_Id = fork();
     if (Process_Id == 0)
     {
-        // printf("LOOOOOOOOOOOOOOL \n");
         system("gcc process.c -o process.out");
-        // printf("LOOOOOOOOOOOOOOL \n");
         execl("process.out", "process.c", NULL);
-        // printf("LOOOOOOOOOOOOOOL \n");
     }
     else
         P->realID = Process_Id;
@@ -162,8 +161,10 @@ void FinishProcess(Process *P)
     fprintf(fptr , "At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, WTA);
     CloseFile(fptr);
 }
+
 void StopProcess(Process *P)
 {
+    kill(P->realID, SIGSTOP);
     int wait = P->startingTime - P->arrivalTime;
     FILE  * fptr = OpenFile();
     printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
@@ -172,6 +173,7 @@ void StopProcess(Process *P)
     kill(P->realID, SIGSTOP);
     P->realID = -1;
 }
+
 void ContinueProcess(Process *P)
 {
     printf("At time %d process %d CONTINUED arr: %d total: %d remaining: %d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
@@ -179,5 +181,7 @@ void ContinueProcess(Process *P)
     fprintf( fptr, "At time %d process %d CONTINUED arr: %d total: %d remaining: %d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
     CloseFile(fptr);
     kill(P->realID, SIGCONT);
+    int wait = P->startingTime - P->arrivalTime;
+    printf("At time %d process %d CONTINUED arr: %d total: %d remain: %d wait:%d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
 }
 

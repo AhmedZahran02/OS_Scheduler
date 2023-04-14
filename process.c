@@ -5,10 +5,15 @@
 
 int remainingtime;
 Process *shmCurrProcess;
+void stop(int signum);
+void cont(int signum);
+int currTime;
 
 int main(int agrc, char *argv[])
 {
     initClk();
+    // signal(SIGUSR1, stop);
+    // signal(SIGCONT, cont);
 
     // TODO it needs to get the remaining time from somewhere
     // remainingtime = ??;
@@ -17,24 +22,34 @@ int main(int agrc, char *argv[])
     remainingtime = shmCurrProcess->remRunTime;
 
     shmCurrProcess->startingTime = getClk();
-    // printf("process id %d start %d reman %d remtime %d realid %d \n", shmCurrProcess->id, shmCurrProcess->startingTime, shmCurrProcess->runTime, shmCurrProcess->remRunTime, shmCurrProcess->realID);
-    // if (shmCurrProcess == -1)
-    // {
-    //     perror("Error in attach in writer");
-    //     exit(-1);
-    // }
+
     while (remainingtime > 0)
     {
+        // currTime = getClk();
+        // while (getClk() == currTime)
+        //     ;
+        // currTime = getClk();
         sleep(1);
-        remainingtime--;
+        --remainingtime;
         shmCurrProcess->remRunTime = remainingtime;
-        //    printf("%d \n", shmCurrProcess->remRunTime);
     }
 
-    // shmCurrProcess->finishTime = getClk();
-    // printf(" process %d terminated \n", shmCurrProcess->id);
-
-    // destroyClk(false);
-
     return 0;
+}
+
+void stop(int signum)
+{
+    // TODO Clears all resources in case of interruption
+    if (remainingtime != shmCurrProcess->remRunTime)
+    {
+        shmCurrProcess->remRunTime = remainingtime;
+    }
+    raise(SIGSTOP);
+}
+
+void cont(int signum)
+{
+    // TODO Clears all resources in case of interruption
+    currTime = getClk();
+    raise(SIGCONT);
 }
