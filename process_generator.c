@@ -3,7 +3,6 @@
 
 int msg_Id = -1;
 int shm_Id = -1;
-int Scheduler_Id = -1;
 void clearResources(int);
 char **split(char *string, char *seperators, int *count);
 bool sendProcess(Process *Process);
@@ -35,7 +34,7 @@ int main(int argc, char *argv[])
         printf("clock has failed initailizing");
     }
 
-    Scheduler_Id = fork();
+    int Scheduler_Id = fork();
     if (Scheduler_Id == 0)
     {
         system("gcc scheduler.c -o scheduler.out");
@@ -308,12 +307,9 @@ bool updateCounter(int counter)
 void clearResources(int signum)
 {
     // TODO Clears all resources in case of interruption
-    printf("Process Generator terminating!\n");
     msgctl(msg_Id, IPC_RMID, (struct msqid_ds *)0);
     shmctl(shm_Id, IPC_RMID, NULL);
     destroyClk(true);
-    kill(Scheduler_Id, SIGINT);
-    // killpg(getpgrp(), SIGKILL);
-    // kill(getpid(), SIGKILL);
-    exit(0);
+    killpg(getpgrp(), SIGINT);
+    kill(getpid(), SIGKILL);
 }

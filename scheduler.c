@@ -6,32 +6,32 @@
 int msg_Id = -1;
 int shm_Id = -1;
 int shm_Id2 = -1;
-void clearResources(int);
+void clearResources2(int);
 bool recvProcess(Process *Process);
 bool initializeMsgQueue();
 bool initializeShm();
+bool initializeShm2();
 void HPF();
 void SRTN();
-void RR();
+void RR(int qunatum);
 int getCounter();
 
 struct Queue2 processes;
 struct Queue2 finishedProcesses;
 
 void handler(int signum);
-void handler2(int signum);
 
 int main(int argc, char *argv[])
 {
     printf("Scheduler is starting ...\n");
     initClk();
     signal(SIGUSR1, handler);
-    signal(SIGINT, clearResources);
-    shm_Id2 = shmget(CONNKEY + 1, sizeof(Process), 0666 | IPC_CREAT);
+    signal(SIGINT, clearResources2);
     processes = createQueue();
     finishedProcesses = createQueue();
     initializeMsgQueue();
     initializeShm();
+    initializeShm2();
     // TODO implement the scheduler :)
     // upon termination release the clock resources.
 
@@ -51,6 +51,13 @@ int main(int argc, char *argv[])
         break;
     }
 
+    // habd zone
+    // while (1)
+    // {
+    //     // donot kill my clock plz
+    // }
+    // end of habd zone
+
     destroyClk(true);
 }
 
@@ -69,6 +76,16 @@ bool initializeShm()
     if ((shm_Id = shmget(CONNKEY, 4, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize shared memory");
+        return false;
+    }
+    return true;
+}
+
+bool initializeShm2()
+{
+    if ((shm_Id2 = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT)) == -1)
+    {
+        printf("failled to initialize shared memory 2");
         return false;
     }
     return true;
@@ -109,7 +126,6 @@ void handler(int signum)
 
 void HPF()
 {
-
     Process *shmCurrPrc;
     Process runningPrc;
     Process tempPrc;
@@ -341,7 +357,6 @@ void SRTN()
 
 void RR(int quantum)
 {
-
     Process *shmCurrProcess;
     Process currentProcess;
     // Getting the current process
@@ -388,12 +403,10 @@ void RR(int quantum)
     }
 }
 
-void clearResources(int signum)
+void clearResources2(int signum)
 {
     // TODO Clears all resources in case of interruption
-    printf("Scheduler terminating!\n");
     shmctl(shm_Id2, IPC_RMID, NULL);
-    // killpg(getpgrp(), SIGKILL);
-    // kill(getpid(), SIGKILL);
+    printf("Scheduler terminating!\n");
     exit(0);
 }
