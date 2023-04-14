@@ -5,6 +5,7 @@
 
 int msg_Id = -1;
 int shm_Id = -1;
+int shm_Id2 = -1;
 void clearResources(int);
 bool recvProcess(Process *Process);
 bool initializeMsgQueue();
@@ -18,12 +19,15 @@ struct Queue2 processes;
 struct Queue2 finishedProcesses;
 
 void handler(int signum);
+void handler2(int signum);
 
 int main(int argc, char *argv[])
 {
     printf("Scheduler is starting ...\n");
     initClk();
     signal(SIGUSR1, handler);
+    signal(SIGINT, clearResources);
+    shm_Id2 = shmget(CONNKEY + 1, sizeof(Process), 0666 | IPC_CREAT);
     processes = createQueue();
     finishedProcesses = createQueue();
     initializeMsgQueue();
@@ -46,13 +50,6 @@ int main(int argc, char *argv[])
         RR(scheduleArgument);
         break;
     }
-
-    // habd zone
-    // while (1)
-    // {
-    //     // donot kill my clock plz
-    // }
-    // end of habd zone
 
     destroyClk(true);
 }
@@ -112,20 +109,19 @@ void handler(int signum)
 
 void HPF()
 {
-     
+
     Process *shmCurrPrc;
     Process runningPrc;
     Process tempPrc;
     struct PriorityQueue2 AvilablPros;
-    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
-    shmCurrPrc = (Process *)shmat(shm_Id, (void *)0, 0);
+    shmCurrPrc = (Process *)shmat(shm_Id2, (void *)0, 0);
     AvilablPros = create();
     runningPrc.realID = -1;
     *shmCurrPrc = runningPrc;
     while (1)
     {
         /* code */
-        while (!isEmpty(&processes) )
+        while (!isEmpty(&processes))
         {
             Process tempPrc2 = dequeue(&processes);
             insert(&AvilablPros, tempPrc2.Priority, tempPrc2);
@@ -143,24 +139,22 @@ void HPF()
                 }
                 else
                 {
-//                    printf("process %d cont at time %d \n", runningPrc.id, getClk());
-//                    kill(runningPrc.realID, SIGCONT);
+                    //                    printf("process %d cont at time %d \n", runningPrc.id, getClk());
+                    //                    kill(runningPrc.realID, SIGCONT);
                     ContinueProcess(&runningPrc);
                 }
             }
         }
         else if (shmCurrPrc->remRunTime == 0)
         {
-            
-                tempPrc = *shmCurrPrc;
-                enqueue(&finishedProcesses, tempPrc);
-//                printf("process %d finished at time %d \n", shmCurrPrc->id, getClk());
+
+            tempPrc = *shmCurrPrc;
+            enqueue(&finishedProcesses, tempPrc);
+            //                printf("process %d finished at time %d \n", shmCurrPrc->id, getClk());
             FinishProcess(shmCurrPrc);
             shmCurrPrc->realID = -1;
         }
-
     }
-    
 }
 
 void SRTN()
@@ -171,8 +165,7 @@ void SRTN()
     struct PriorityQueue2 currProcesses;
 
     // printf("process is added to system at time 3333\n");
-    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
-    shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
+    shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     currProcesses = create();
     // finishedProcesses = createQueue();
     currProcess.realID = -1;
@@ -213,7 +206,7 @@ void SRTN()
 
                     // printf("Loooool2 \n");
                     // shmCurrProcess->startingTime = getClk();
-                    shmCurrProcess->realID =  StartProcess(&currProcess);
+                    shmCurrProcess->realID = StartProcess(&currProcess);
                 }
                 else
                 {
@@ -235,7 +228,7 @@ void SRTN()
                 tempProcess.startingTime = shmCurrProcess->startingTime;
                 tempProcess.runTime = shmCurrProcess->runTime;
                 enqueue(&finishedProcesses, tempProcess);
-//                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
+                //                printf("process %d finished at time %d \n", shmCurrProcess->id, getClk());
                 FinishProcess(shmCurrProcess);
                 shmCurrProcess->realID = -1;
 
@@ -278,9 +271,9 @@ void SRTN()
                     {
 
                         // stop the current process and create new on if runtime = remruntime
-//                        printf("process %d stoped at time %d \n", shmCurrProcess->id, getClk());
+                        //                        printf("process %d stoped at time %d \n", shmCurrProcess->id, getClk());
                         // dequeue2(&currProcesses);
-//                        kill(shmCurrProcess->realID, SIGSTOP);
+                        //                        kill(shmCurrProcess->realID, SIGSTOP);
                         StopProcess(shmCurrProcess);
 
                         tempProcess.id = shmCurrProcess->id;
@@ -346,40 +339,61 @@ void SRTN()
     */
 }
 
-void RR(int quantum )
+void RR(int quantum)
 {
 
-    Process *shmCurrProcess ; Process  currentProcess;
+    Process *shmCurrProcess;
+    Process currentProcess;
     // Getting the current process
-    int shm_Id = shmget(CONNKEY + 1, 40, 0666 | IPC_CREAT);
-    shmCurrProcess = (Process *)shmat(shm_Id, (void *)0, 0);
+    shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     shmCurrProcess->realID = -1;
-    int last_start = -1 ;
-    while (true){
-        if(shmCurrProcess->realID == -1){ // No current process is running
-            if (!isEmpty(&processes)) {
-                Process Current_Process =  dequeue(&processes) ;
-                if(Current_Process.startingTime == -1){ // If it's the first time to get scheduled
-                    last_start = Current_Process.remRunTime ;
+    int last_start = -1;
+    while (true)
+    {
+        if (shmCurrProcess->realID == -1)
+        { // No current process is running
+            if (!isEmpty(&processes))
+            {
+                Process Current_Process = dequeue(&processes);
+                if (Current_Process.startingTime == -1)
+                { // If it's the first time to get scheduled
+                    last_start = Current_Process.remRunTime;
                     StartProcess(&Current_Process);
-                    *shmCurrProcess =  Current_Process;
-                }else{ // It started before so let's make it continue
-                    ContinueProcess(&Current_Process );
-                    last_start = Current_Process.remRunTime ;
+                    *shmCurrProcess = Current_Process;
+                }
+                else
+                { // It started before so let's make it continue
+                    ContinueProcess(&Current_Process);
+                    last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
                 }
             }
-        }else{
-            if(!shmCurrProcess->remRunTime ){ // Process Finished
+        }
+        else
+        {
+            if (!shmCurrProcess->remRunTime)
+            { // Process Finished
                 FinishProcess(shmCurrProcess);
                 enqueue(&finishedProcesses, *shmCurrProcess);
                 shmCurrProcess->realID = -1;
             }
-            else if(last_start - shmCurrProcess->remRunTime  >= quantum && !isEmpty(&processes) ){ // If it still didn't finish but Preemption will occur
-                Process  Cur_Process = *shmCurrProcess;
+            else if (last_start - shmCurrProcess->remRunTime >= quantum && !isEmpty(&processes))
+            { // If it still didn't finish but Preemption will occur
+                Process Cur_Process = *shmCurrProcess;
                 StopProcess(shmCurrProcess);
-                if(shmCurrProcess->remRunTime)enqueue(&processes , Cur_Process);
+                if (shmCurrProcess->remRunTime)
+                    enqueue(&processes, Cur_Process);
             }
         }
     }
+}
+
+void clearResources(int signum)
+{
+    // TODO Clears all resources in case of interruption
+    printf("Scheduler terminating!\n");
+    shmctl(shm_Id2, IPC_RMID, NULL);
+    // killpg(getpgrp(), SIGKILL);
+    // kill(getpid(), SIGKILL);
+    exit(0);
 }
