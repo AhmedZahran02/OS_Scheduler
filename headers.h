@@ -156,7 +156,7 @@ void FinishProcess(Process *P)
 
 void StopProcess(Process *P)
 {
-    kill(P->realID, SIGUSR1);
+    kill(P->realID, SIGSTOP);
     int wait = P->startingTime - P->arrivalTime;
     printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
     P->realID = -1;
