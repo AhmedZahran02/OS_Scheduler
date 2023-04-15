@@ -6,6 +6,7 @@
 int msg_Id = -1;
 int shm_Id = -1;
 int shm_Id2 = -1;
+int numOfProcesses;
 void clearResources2(int);
 bool recvProcess(Process *Process);
 bool initializeMsgQueue();
@@ -15,6 +16,8 @@ void HPF();
 void SRTN();
 void RR(int qunatum);
 int getCounter();
+void genPrefFile();
+double calculateSD(double *data, double *avgWTA);
 
 struct Queue2 readyQueue;
 struct Queue2 finishedProcesses;
@@ -37,6 +40,11 @@ int main(int argc, char *argv[])
 
     int scheduleType = *argv[1];
     int scheduleArgument = *argv[2];
+    numOfProcesses = *argv[3];
+
+    FILE *out_file = fopen("scheduler.log", "w"); // write only
+    fprintf(out_file, "#At time x process y state arr w total z remain y wait k\n");
+    CloseFile(out_file);
 
     switch (scheduleType)
     {
@@ -50,6 +58,9 @@ int main(int argc, char *argv[])
         RR(scheduleArgument);
         break;
     }
+
+    genPrefFile();
+    clearResources2(0);
 }
 
 bool initializeMsgQueue()
@@ -126,6 +137,10 @@ void HPF()
     *shmCurrPrc = runningPrc;
     while (1)
     {
+        if (finishedProcesses.count == numOfProcesses)
+        {
+            break;
+        }
         while (!isEmpty(&readyQueue))
         {
             Process tempPrc2 = dequeue(&readyQueue);
@@ -150,10 +165,9 @@ void HPF()
         }
         else if (shmCurrPrc->remRunTime == 0)
         {
-
+            FinishProcess(shmCurrPrc);
             tempPrc = *shmCurrPrc;
             enqueue(&finishedProcesses, tempPrc);
-            FinishProcess(shmCurrPrc);
             shmCurrPrc->realID = -1;
         }
     }
@@ -173,6 +187,10 @@ void SRTN()
 
     while (1)
     {
+        if (finishedProcesses.count == numOfProcesses)
+        {
+            break;
+        }
         while (!isEmpty(&readyQueue))
         {
             tempProcess = readyQueue.front->data;
@@ -203,6 +221,7 @@ void SRTN()
         {
             if (shmCurrProcess->remRunTime == 0)
             {
+                FinishProcess(shmCurrProcess);
                 tempProcess.id = shmCurrProcess->id;
                 tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
                 tempProcess.finishTime = shmCurrProcess->finishTime;
@@ -212,7 +231,6 @@ void SRTN()
                 tempProcess.startingTime = shmCurrProcess->startingTime;
                 tempProcess.runTime = shmCurrProcess->runTime;
                 enqueue(&finishedProcesses, tempProcess);
-                FinishProcess(shmCurrProcess);
                 shmCurrProcess->realID = -1;
             }
             else
@@ -248,8 +266,12 @@ void RR(int quantum)
     shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     shmCurrProcess->realID = -1;
     int last_start = -1;
-    while (true)
+    while (1)
     {
+        if (finishedProcesses.count == numOfProcesses)
+        {
+            break;
+        }
         if (shmCurrProcess->realID == -1)
         { // No current process is running
             if (!isEmpty(&readyQueue))
@@ -286,6 +308,48 @@ void RR(int quantum)
             }
         }
     }
+}
+
+void genPrefFile()
+{
+    double *data;
+    double WTsum = 0;
+    data = (double *)malloc(numOfProcesses * sizeof(double));
+    int i = 0;
+    while (!isEmpty(&finishedProcesses))
+    {
+        Process tempProcess;
+        tempProcess = dequeue(&finishedProcesses);
+        data[i] = ((double)tempProcess.finishTime - tempProcess.arrivalTime) / tempProcess.runTime;
+        printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
+        WTsum += (tempProcess.startingTime - tempProcess.arrivalTime);
+        i++;
+    }
+    double avgWTA;
+    double sdWTA = calculateSD(data, &avgWTA);
+    double avgWT = WTsum / numOfProcesses;
+
+    FILE *out_file2 = fopen("scheduler.pref", "w"); // write only
+    fprintf(out_file2, "CPU Utilization = %.*f %%\nAVGWait = %.*f\nAVGWTA = %.*f\nstdWTA = %.*f\n", 2, 100.0, 2, avgWT, 2, avgWTA, 2, sdWTA);
+    CloseFile(out_file2);
+}
+
+double calculateSD(double *data, double *avgWTA)
+{
+    double sum = 0.0, mean, SD = 0.0;
+    int i;
+    for (i = 0; i < numOfProcesses; ++i)
+    {
+        sum += data[i];
+    }
+    // printf("test %f %d\n", sum, numOfProcesses);
+    mean = sum / numOfProcesses;
+    (*avgWTA) = mean;
+    for (i = 0; i < numOfProcesses; ++i)
+    {
+        SD += pow(data[i] - mean, 2);
+    }
+    return sqrt(SD / numOfProcesses);
 }
 
 void clearResources2(int signum)

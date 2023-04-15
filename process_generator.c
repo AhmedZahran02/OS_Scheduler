@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
     int Scheduler_Id = fork();
     if (Scheduler_Id == 0)
     {
-        system("gcc scheduler.c -o scheduler.out");
-        execl("scheduler.out", "scheduler.c", &(scheduleType.type), &(scheduleType.parameter), NULL);
+        system("gcc scheduler.c -o scheduler.out -lm");
+        execl("scheduler.out", "scheduler.c", &(scheduleType.type), &(scheduleType.parameter), &size, NULL);
     }
     else if (Scheduler_Id == -1)
     {
@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
     // habd zone
     int status;
     waitpid(-1, &status, 0);
+    clearResources(0);
     // end of habd zone
 }
 
@@ -310,6 +311,7 @@ void clearResources(int signum)
     msgctl(msg_Id, IPC_RMID, (struct msqid_ds *)0);
     shmctl(shm_Id, IPC_RMID, NULL);
     destroyClk(true);
+    printf("process generator terminating!");
     killpg(getpgrp(), SIGINT);
     kill(getpid(), SIGKILL);
 }

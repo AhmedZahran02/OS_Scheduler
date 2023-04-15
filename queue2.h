@@ -13,6 +13,7 @@ struct Queue2
 {
     struct Node3 *front;
     struct Node3 *rear;
+    int count;
 };
 
 // Create a new node with the given data
@@ -30,6 +31,7 @@ struct Queue2 createQueue()
     struct Queue2 *queue = (struct Queue2 *)malloc(sizeof(struct Queue2));
     queue->front = NULL;
     queue->rear = NULL;
+    queue->count = 0;
     return *queue;
 }
 
@@ -53,6 +55,7 @@ void enqueue(struct Queue2 *queue, Process data)
         queue->rear->next = newNode;
         queue->rear = newNode;
     }
+    queue->count++;
 }
 
 // Remove an element from the front of the queue
@@ -71,6 +74,7 @@ Process dequeue(struct Queue2 *queue)
     struct Node3 *temp = queue->front;
     Process data = temp->data;
     queue->front = queue->front->next;
+    queue->count--;
     if (queue->front == NULL)
     {
         queue->rear = NULL;
