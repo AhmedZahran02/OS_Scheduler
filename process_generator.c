@@ -114,7 +114,7 @@ Process *readFile(char *file, int *size)
         {
             int count;
             char **output = split(line, "\t", &count);
-            int id = atoi(output[0]), arrival = atoi(output[1]), runTime = atoi(output[2]), priority = atoi(output[3]);
+            int id = atoi(output[0]), arrival = atoi(output[1]), runTime = atoi(output[2]), priority = atoi(output[3]) , memSize = atoi(output[4]);
             processArray[(*size) - 1] = createProcess(id, arrival, runTime, priority);
             // ProcessFinished(processArray[(*size) - 1]);
         }
