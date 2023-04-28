@@ -29,6 +29,7 @@ struct Process
     int arrivalTime;
     int runTime;
     int Priority;
+    int memsize;
     int remRunTime;   // initially = runTime
     int realID;       // initially = -1
     int startingTime; // initially = -1
@@ -99,13 +100,14 @@ int max(int x, int y)
     return y;
 }
 
-Process createProcess(int id, int arrival, int runTime, int P)
+Process createProcess(int id, int arrival, int runTime, int P, int mem)
 {
     Process process;
     process.id = id;
     process.arrivalTime = arrival;
     process.runTime = runTime;
     process.Priority = P;
+    process.memsize = mem;
     process.finishTime = -1;
     process.startingTime = -1;
     process.remRunTime = runTime;
