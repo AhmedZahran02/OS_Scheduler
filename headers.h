@@ -22,18 +22,25 @@ typedef struct Process Process;
 
 #define SHKEY 300
 #define CONNKEY 400
+#define CLRPKEY 500
 
 struct Process
 {
+    long int mtype;
     int id;
     int arrivalTime;
     int runTime;
     int Priority;
-    int memsize;
     int remRunTime;   // initially = runTime
     int realID;       // initially = -1
     int startingTime; // initially = -1
     int finishTime;   // initially = -1
+    int memSize;
+};
+
+struct message
+{
+    int pid;
 };
 
 struct ScheduleType
@@ -107,11 +114,11 @@ Process createProcess(int id, int arrival, int runTime, int P, int mem)
     process.arrivalTime = arrival;
     process.runTime = runTime;
     process.Priority = P;
-    process.memsize = mem;
     process.finishTime = -1;
     process.startingTime = -1;
     process.remRunTime = runTime;
     process.realID = -1;
+    process.memSize = mem;
     return process;
 }
 

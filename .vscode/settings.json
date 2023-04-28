@@ -3,6 +3,17 @@
     "signal.h": "c",
     "stdlib.h": "c",
     "headers.h": "c",
-    "priorityqueue2.h": "c"
+    "priorityqueue2.h": "c",
+    "system_error": "c",
+    "array": "c",
+    "*.tcc": "c",
+    "string": "c",
+    "vector": "c",
+    "string_view": "c",
+    "functional": "c",
+    "limits": "c",
+    "ostream": "c",
+    "streambuf": "c",
+    "tuple": "c"
   }
 }

@@ -1,10 +1,13 @@
-
 #include "headers.h"
 
 /* Modify this file as needed*/
 
 int remainingtime;
 Process *shmCurrProcess;
+int msg_Id = -1;
+
+bool kill_me();
+bool initializeMsgQueue();
 
 int main(int agrc, char *argv[])
 {
@@ -24,5 +27,33 @@ int main(int agrc, char *argv[])
         shmCurrProcess->remRunTime = remainingtime;
     }
 
+    initializeMsgQueue();
+    kill_me();
+    kill(getppid(), SIGUSR2);
+
     return 0;
+}
+
+bool initializeMsgQueue()
+{
+    if ((msg_Id = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
+    {
+        printf("failled to initialize msg queue");
+        return false;
+    }
+    return true;
+}
+
+bool kill_me()
+{
+    struct message *msg = malloc(sizeof(struct message));
+    msg->pid = getpid();
+    if (msg_Id == -1)
+    {
+        return false;
+    }
+    printf("i will send the pid = %d\n", msg->pid);
+    msgsnd(msg_Id, (void *)msg, sizeof(struct message), IPC_NOWAIT);
+
+    return true;
 }

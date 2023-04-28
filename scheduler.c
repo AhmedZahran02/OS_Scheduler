@@ -1,15 +1,19 @@
-
 #include "headers.h"
 #include "queue2.h"
 #include "PriorityQueue2.h"
 
 int msg_Id = -1;
+int msg_Id2 = -1;
 int shm_Id = -1;
 int shm_Id2 = -1;
+Process *shmCurrProcess;
+
 int numOfProcesses;
 void clearResources2(int);
+void cleanProcessResources(int pid);
 bool recvProcess(Process *Process);
 bool initializeMsgQueue();
+bool initializeMsgQueue2();
 bool initializeShm();
 bool initializeShm2();
 void HPF();
@@ -23,6 +27,7 @@ struct Queue2 readyQueue;
 struct Queue2 finishedProcesses;
 
 void handler(int signum);
+void cleanprocess(int signum);
 
 int main(int argc, char *argv[])
 {
@@ -30,11 +35,15 @@ int main(int argc, char *argv[])
     initClk();
     signal(SIGUSR1, handler);
     signal(SIGINT, clearResources2);
+    signal(SIGUSR2, cleanprocess);
     readyQueue = createQueue();
     finishedProcesses = createQueue();
     initializeMsgQueue();
+    initializeMsgQueue2();
     initializeShm();
     initializeShm2();
+    shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
+
     // TODO implement the scheduler :)
     // upon termination release the clock resources.
 
@@ -68,6 +77,16 @@ bool initializeMsgQueue()
     if ((msg_Id = msgget(CONNKEY, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize msg queue");
+        return false;
+    }
+    return true;
+}
+
+bool initializeMsgQueue2()
+{
+    if ((msg_Id2 = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
+    {
+        printf("failled to initialize msg queue 2");
         return false;
     }
     return true;
@@ -125,16 +144,52 @@ void handler(int signum)
     }
 }
 
+void cleanprocess(int signum)
+{
+    if (msg_Id2 == -1)
+    {
+        printf("failed to clean process\n");
+        return;
+    }
+    struct message *msg = malloc(sizeof(struct message));
+    msgrcv(msg_Id2, (void *)msg, sizeof(struct message), 0, !IPC_NOWAIT);
+
+    cleanProcessResources(msg->pid);
+    // printf("i recieved the pid = %d\n", msg->pid);
+
+    return;
+}
+
+void cleanProcessResources(int pid)
+{
+    printf("i recieved the pid = %d\n", pid);
+    // remove from ready queue to finished using pid detail
+    // put final details in process struct
+    // free memory used by that pid
+    // remove the finishing in the 3 scheduling
+    Process tempProcess;
+
+    FinishProcess(shmCurrProcess);
+    tempProcess.id = shmCurrProcess->id;
+    tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+    tempProcess.finishTime = shmCurrProcess->finishTime;
+    tempProcess.Priority = shmCurrProcess->Priority;
+    tempProcess.realID = shmCurrProcess->realID;
+    tempProcess.remRunTime = shmCurrProcess->remRunTime;
+    tempProcess.startingTime = shmCurrProcess->startingTime;
+    tempProcess.runTime = shmCurrProcess->runTime;
+    enqueue(&finishedProcesses, tempProcess);
+    shmCurrProcess->realID = -1;
+}
+
 void HPF()
 {
-    Process *shmCurrPrc;
     Process runningPrc;
     Process tempPrc;
     struct PriorityQueue2 AvilablPros;
-    shmCurrPrc = (Process *)shmat(shm_Id2, (void *)0, 0);
     AvilablPros = create();
     runningPrc.realID = -1;
-    *shmCurrPrc = runningPrc;
+    *shmCurrProcess = runningPrc;
     while (1)
     {
         if (finishedProcesses.count == numOfProcesses)
@@ -146,16 +201,16 @@ void HPF()
             Process tempPrc2 = dequeue(&readyQueue);
             insert(&AvilablPros, tempPrc2.Priority, tempPrc2);
         }
-        if (shmCurrPrc->realID == -1)
+        if (shmCurrProcess->realID == -1)
         {
             if (AvilablPros.count > 0)
             {
 
                 runningPrc = dequeue2(&AvilablPros);
-                *shmCurrPrc = runningPrc;
+                *shmCurrProcess = runningPrc;
                 if (runningPrc.realID == -1)
                 {
-                    shmCurrPrc->realID = StartProcess(&runningPrc);
+                    shmCurrProcess->realID = StartProcess(&runningPrc);
                 }
                 else
                 {
@@ -163,30 +218,22 @@ void HPF()
                 }
             }
         }
-        else if (shmCurrPrc->remRunTime == 0)
-        {
-            FinishProcess(shmCurrPrc);
-            tempPrc = *shmCurrPrc;
-            enqueue(&finishedProcesses, tempPrc);
-            shmCurrPrc->realID = -1;
-        }
     }
 }
 
 void SRTN()
 {
-    Process *shmCurrProcess;
     Process currProcess;
     Process tempProcess;
     struct PriorityQueue2 readyPQueue;
 
-    shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     readyPQueue = create();
     currProcess.realID = -1;
     *shmCurrProcess = currProcess;
 
     while (1)
     {
+        //  printf("lol \n");
         if (finishedProcesses.count == numOfProcesses)
         {
             break;
@@ -219,39 +266,23 @@ void SRTN()
         }
         else
         {
-            if (shmCurrProcess->remRunTime == 0)
+
+            if (readyPQueue.count > 0)
             {
-                FinishProcess(shmCurrProcess);
-                tempProcess.id = shmCurrProcess->id;
-                tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-                tempProcess.finishTime = shmCurrProcess->finishTime;
-                tempProcess.Priority = shmCurrProcess->Priority;
-                tempProcess.realID = shmCurrProcess->realID;
-                tempProcess.remRunTime = shmCurrProcess->remRunTime;
-                tempProcess.startingTime = shmCurrProcess->startingTime;
-                tempProcess.runTime = shmCurrProcess->runTime;
-                enqueue(&finishedProcesses, tempProcess);
-                shmCurrProcess->realID = -1;
-            }
-            else
-            {
-                if (readyPQueue.count > 0)
+                currProcess = readyPQueue.front->data;
+                if (shmCurrProcess->remRunTime > currProcess.remRunTime)
                 {
-                    currProcess = readyPQueue.front->data;
-                    if (shmCurrProcess->remRunTime > currProcess.remRunTime)
-                    {
-                        tempProcess.realID = shmCurrProcess->realID;
-                        StopProcess(shmCurrProcess);
-                        tempProcess.id = shmCurrProcess->id;
-                        tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-                        tempProcess.finishTime = shmCurrProcess->finishTime;
-                        tempProcess.Priority = shmCurrProcess->Priority;
-                        tempProcess.remRunTime = shmCurrProcess->remRunTime;
-                        tempProcess.startingTime = shmCurrProcess->startingTime;
-                        tempProcess.runTime = shmCurrProcess->runTime;
-                        insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
-                        shmCurrProcess->realID = -1;
-                    }
+                    tempProcess.realID = shmCurrProcess->realID;
+                    StopProcess(shmCurrProcess);
+                    tempProcess.id = shmCurrProcess->id;
+                    tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
+                    tempProcess.finishTime = shmCurrProcess->finishTime;
+                    tempProcess.Priority = shmCurrProcess->Priority;
+                    tempProcess.remRunTime = shmCurrProcess->remRunTime;
+                    tempProcess.startingTime = shmCurrProcess->startingTime;
+                    tempProcess.runTime = shmCurrProcess->runTime;
+                    insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
+                    shmCurrProcess->realID = -1;
                 }
             }
         }
@@ -260,7 +291,6 @@ void SRTN()
 
 void RR(int quantum)
 {
-    Process *shmCurrProcess;
     Process currentProcess;
     // Getting the current process
     shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
@@ -293,13 +323,7 @@ void RR(int quantum)
         }
         else
         {
-            if (!shmCurrProcess->remRunTime)
-            { // Process Finished
-                FinishProcess(shmCurrProcess);
-                enqueue(&finishedProcesses, *shmCurrProcess);
-                shmCurrProcess->realID = -1;
-            }
-            else if (last_start - shmCurrProcess->remRunTime >= quantum && !isEmpty(&readyQueue))
+            if (last_start - shmCurrProcess->remRunTime >= quantum && !isEmpty(&readyQueue))
             { // If it still didn't finish but Preemption will occur
                 Process Cur_Process = *shmCurrProcess;
                 StopProcess(shmCurrProcess);
@@ -321,7 +345,7 @@ void genPrefFile()
         Process tempProcess;
         tempProcess = dequeue(&finishedProcesses);
         data[i] = ((double)tempProcess.finishTime - tempProcess.arrivalTime) / tempProcess.runTime;
-        printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
+        // printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
         WTsum += (tempProcess.startingTime - tempProcess.arrivalTime);
         i++;
     }

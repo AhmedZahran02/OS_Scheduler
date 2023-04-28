@@ -196,7 +196,7 @@ char **split(char *string, char *seperators, int *count)
             *count = *count + 1;
     }
 
-    // allocate space for a dynamically allocated array of *count* number of
+    // allocate space for a dynamically allocated array of count number of
     // pointers to strings
     char **strings = malloc(sizeof(char *) * *count);
 
