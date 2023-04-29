@@ -40,7 +40,7 @@ struct Queue2 finishedProcesses;
 
 void handler(int signum);
 void cleanprocess(int signum);
-
+double cpuUtilization();
 int main(int argc, char *argv[])
 {
     printf("Scheduler is starting ...\n");
@@ -476,7 +476,15 @@ void RR(int quantum)
         }
     }
 }
-
+void DeleteMemory( ListNode * reqLoc , int process_id){
+    int st = reqLoc->start , en = reqLoc->end, memLength = en-st+1;
+    freeMem =  deleteNodeByValues(freeMem, reqLoc);
+    printf("deleted from free memory start  %d end %d \n", st, en);
+    printf("ID %d start  %d end %d \n", process_id, st, en);
+    FILE *fptr = OpenFile("memory.log");
+    fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), memLength, process_id, st, en);
+    CloseFile(fptr);
+}
 bool FF(Process *process)
 {
     ListNode *reqLoc;
@@ -517,10 +525,27 @@ bool FF(Process *process)
 
     return false;
 }
+void splitMemoryBuddy(int process_size, ListNode * freePart){
+    int req_size = 1<<((int)ceil(log2(process_size))) ;
+    int st = freePart->start , en = freePart->end;
+    int cur_size = en - st  + 1 ;
+    while (req_size < cur_size){
+        cur_size /=2  ;
+        deleteNodeByValues(freeMem , freePart) ;
+        insertSorted(freeMem , ((st+en)>>1)+1 , en) ;
+        freePart->end = en = (st+en)>>1;
+    }
+
+}
 
 bool BMA(Process *process)
 {
-    return false;
+    ListNode * reqLoc = findBestFit(freeMem , process->memSize) ;
+    if(!reqLoc) return  false;
+    splitMemoryBuddy(process->memSize , reqLoc) ;
+    process->startMemLoc = reqLoc->start ;
+    DeleteMemory(reqLoc, process->id) ;
+    return true;
 }
 
 void releaseMemFF(Process *process)
@@ -590,6 +615,7 @@ void genPrefFile()
 {
     double *data;
     double WTsum = 0;
+    double cpuUtil = cpuUtilization();
     data = (double *)malloc(numOfProcesses * sizeof(double));
     int i = 0;
     while (!isEmpty(&finishedProcesses))
@@ -606,7 +632,8 @@ void genPrefFile()
     double avgWT = WTsum / numOfProcesses;
 
     FILE *out_file2 = fopen("scheduler.pref", "w"); // write only
-    fprintf(out_file2, "CPU Utilization = %.*f %%\nAVGWait = %.*f\nAVGWTA = %.*f\nstdWTA = %.*f\n", 2, 100.0, 2, avgWT, 2, avgWTA, 2, sdWTA);
+    
+    fprintf(out_file2, "CPU Utilization = %.*f %%\nAVGWait = %.*f\nAVGWTA = %.*f\nstdWTA = %.*f\n", 2, cpuUtil, 2, avgWT, 2, avgWTA, 2, sdWTA);
     CloseFile(out_file2);
 }
 
@@ -634,4 +661,24 @@ void clearResources2(int signum)
     shmctl(shm_Id2, IPC_RMID, NULL);
     printf("Scheduler terminating!\n");
     exit(0);
+}
+
+double cpuUtilization(){
+    int firstArrival = 0;
+    int finishTime = 0;
+    struct Node3* p1 = finishedProcesses.front;
+    struct Node3* p2 = finishedProcesses.rear;
+    firstArrival = p1->data.arrivalTime;
+    finishTime = p2->data.finishTime;
+    int runningSum =0;
+    while(p1 != p2)
+    {
+        runningSum += p1->data.runTime;
+        p1 = p1->next;
+    }
+    runningSum += p1->data.runTime;
+    int realTime = finishTime - firstArrival;
+    runningSum = min(runningSum,realTime);
+    double utilization =  100 * (double)(runningSum)/(realTime);
+    return utilization;
 }
