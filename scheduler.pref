@@ -1,11 +1,4 @@
-<<<<<<< HEAD
-CPU Utilization = 100.00 %
-AVGWait = 18.67
-AVGWTA = 6.20
-stdWTA = 6.16
-=======
 CPU Utilization = 97.22 %
-AVGWait = 9.00
-AVGWTA = 3.39
-stdWTA = 2.90
->>>>>>> f1ef55cf6ca56d4e4f755c2bf5d6d22e192dcf74
+AVGWait = 10.00
+AVGWTA = 4.13
+stdWTA = 4.98

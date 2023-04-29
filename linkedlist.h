@@ -154,23 +154,25 @@ ListNode *findFirstFit(ListNode *head, int size)
     }
     return trav;
 }
+
 ListNode *findBestFit(ListNode *head, int size)
 {
-    ListNode * trav = head;
-    ListNode * best_node = NULL ;
-    int best = 1025 ; // Assuming the maximum size is 1024
+    ListNode *trav = head;
+    ListNode *best_node = NULL;
+    int best = 1025; // Assuming the maximum size is 1024
     while (trav != NULL)
     {
-        int current_size = trav->end - trav->start + 1 ;
-        if (current_size >= size && current_size < best )
+        int current_size = trav->end - trav->start + 1;
+        if (current_size >= size && current_size < best)
         {
-            best = current_size ;
-            best_node = trav ;
+            best = current_size;
+            best_node = trav;
         }
         trav = trav->next;
     }
     return best_node;
 }
+
 ListNode *deleteNodeByValues(ListNode *head, ListNode *node)
 {
     ListNode *trav = head;
@@ -192,14 +194,12 @@ ListNode *deleteNodeByValues(ListNode *head, ListNode *node)
     return head;
 }
 
-
-
-
-void PrintList(ListNode * head){
-    ListNode * trav = head;
+void PrintList(ListNode *head)
+{
+    ListNode *trav = head;
     while (trav != NULL)
     {
-        printf("St: %d , End:%d\n" , trav->start , trav->end);
+        printf("St: %d , End:%d\n", trav->start, trav->end);
         trav = trav->next;
     }
 }
