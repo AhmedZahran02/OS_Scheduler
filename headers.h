@@ -206,3 +206,5 @@ void ContinueProcess(Process *P)
     int wait = P->startingTime - P->arrivalTime;
     printf("At time %d process %d CONTINUED arr: %d total: %d remain: %d wait:%d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
 }
+
+

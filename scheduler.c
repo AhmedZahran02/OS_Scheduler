@@ -476,7 +476,15 @@ void RR(int quantum)
         }
     }
 }
-
+void DeleteMemory( ListNode * reqLoc , int process_id){
+    int st = reqLoc->start , en = reqLoc->end, memLength = en-st+1;
+    freeMem =  deleteNodeByValues(freeMem, reqLoc);
+    printf("deleted from free memory start  %d end %d \n", st, en);
+    printf("ID %d start  %d end %d \n", process_id, st, en);
+    FILE *fptr = OpenFile("memory.log");
+    fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), memLength, process_id, st, en);
+    CloseFile(fptr);
+}
 bool FF(Process *process)
 {
     ListNode *reqLoc;
@@ -517,10 +525,31 @@ bool FF(Process *process)
 
     return false;
 }
+void splitMemoryBuddy(int process_size, ListNode * freePart){
+    int req_size = 1<<((int)ceil(log2(process_size))) ;
+    int st = freePart->start , en = freePart->end;
+    int cur_size = en - st  + 1 ;
+    while (req_size < cur_size){
+        cur_size /=2  ;
+        deleteNodeByValues(freeMem , freePart) ;
+        insertSorted(freeMem , ((st+en)>>1)+1 , en) ;
+        freePart->end = en = (st+en)>>1;
+    }
+
+}
 
 bool BMA(Process *process)
 {
-    return false;
+    ListNode * reqLoc = findBestFit(freeMem , process->memSize) ;
+    if(!reqLoc) return  false;
+    splitMemoryBuddy(process->memSize , reqLoc) ;
+    process->startMemLoc = reqLoc->start ;
+    PrintList(freeMem);
+    printf("\n");
+    DeleteMemory(reqLoc, process->id) ;
+    PrintList(freeMem);
+    printf("\n");
+    return true;
 }
 
 void releaseMemFF(Process *process)
