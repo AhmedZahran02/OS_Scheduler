@@ -36,7 +36,7 @@ int main(int agrc, char *argv[])
 
 bool initializeMsgQueue()
 {
-    if ((msg_Id = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
+    if ((msg_Id = msgget(133456, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize msg queue");
         return false;
@@ -52,7 +52,7 @@ bool kill_me()
     {
         return false;
     }
-    printf("i will send the pid = %d\n", msg->pid);
+    // printf("i will send the pid = %d\n", msg->pid);
     msgsnd(msg_Id, (void *)msg, sizeof(struct message), IPC_NOWAIT);
 
     return true;

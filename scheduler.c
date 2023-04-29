@@ -1,14 +1,18 @@
 #include "headers.h"
 #include "queue2.h"
 #include "PriorityQueue2.h"
+#include "linkedlist.h"
 
 int msg_Id = -1;
 int msg_Id2 = -1;
 int shm_Id = -1;
 int shm_Id2 = -1;
+int memType;
 Process *shmCurrProcess;
 
 int numOfProcesses;
+ListNode *freeMem;
+
 void clearResources2(int);
 void cleanProcessResources(int pid);
 bool recvProcess(Process *Process);
@@ -19,9 +23,17 @@ bool initializeShm2();
 void HPF();
 void SRTN();
 void RR(int qunatum);
+
+bool FF(Process *process);
+bool BMA(Process *process);
+void releaseMemFF(Process *process);
+void releaseMemBMA(Process *process);
 int getCounter();
 void genPrefFile();
 double calculateSD(double *data, double *avgWTA);
+
+struct Queue2 waitingQueue;
+struct Queue2 tempWaitingQueue;
 
 struct Queue2 readyQueue;
 struct Queue2 finishedProcesses;
@@ -37,7 +49,12 @@ int main(int argc, char *argv[])
     signal(SIGINT, clearResources2);
     signal(SIGUSR2, cleanprocess);
     readyQueue = createQueue();
+    waitingQueue = createQueue();
+    tempWaitingQueue = createQueue();
+
     finishedProcesses = createQueue();
+    freeMem = createHead(0, 1023);
+    // printf("%d %d", freeMem->start, freeMem->end);
     initializeMsgQueue();
     initializeMsgQueue2();
     initializeShm();
@@ -50,9 +67,14 @@ int main(int argc, char *argv[])
     int scheduleType = *argv[1];
     int scheduleArgument = *argv[2];
     numOfProcesses = *argv[3];
+    memType = *argv[4];
 
     FILE *out_file = fopen("scheduler.log", "w"); // write only
     fprintf(out_file, "#At time x process y state arr w total z remain y wait k\n");
+    CloseFile(out_file);
+
+    out_file = fopen("memory.log", "w"); // write only
+    fprintf(out_file, "#At time x allocated y bytes for process z from i to j\n");
     CloseFile(out_file);
 
     switch (scheduleType)
@@ -84,7 +106,7 @@ bool initializeMsgQueue()
 
 bool initializeMsgQueue2()
 {
-    if ((msg_Id2 = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
+    if ((msg_Id2 = msgget(133456, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize msg queue 2");
         return false;
@@ -140,7 +162,7 @@ void handler(int signum)
     {
         Process tempProcess;
         recvProcess(&tempProcess);
-        enqueue(&readyQueue, tempProcess);
+        enqueue(&waitingQueue, tempProcess);
     }
 }
 
@@ -162,7 +184,7 @@ void cleanprocess(int signum)
 
 void cleanProcessResources(int pid)
 {
-    printf("i recieved the pid = %d\n", pid);
+    // printf("i recieved the pid = %d\n", pid);
     // remove from ready queue to finished using pid detail
     // put final details in process struct
     // free memory used by that pid
@@ -170,6 +192,7 @@ void cleanProcessResources(int pid)
     Process tempProcess;
 
     FinishProcess(shmCurrProcess);
+
     tempProcess.id = shmCurrProcess->id;
     tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
     tempProcess.finishTime = shmCurrProcess->finishTime;
@@ -178,6 +201,16 @@ void cleanProcessResources(int pid)
     tempProcess.remRunTime = shmCurrProcess->remRunTime;
     tempProcess.startingTime = shmCurrProcess->startingTime;
     tempProcess.runTime = shmCurrProcess->runTime;
+    tempProcess.memSize = shmCurrProcess->memSize;
+    tempProcess.startMemLoc = shmCurrProcess->startMemLoc;
+    if (memType == 1)
+    {
+        releaseMemFF(&tempProcess);
+    }
+    else
+    {
+        releaseMemBMA(shmCurrProcess);
+    }
     enqueue(&finishedProcesses, tempProcess);
     shmCurrProcess->realID = -1;
 }
@@ -199,7 +232,45 @@ void HPF()
         while (!isEmpty(&readyQueue))
         {
             Process tempPrc2 = dequeue(&readyQueue);
-            insert(&AvilablPros, tempPrc2.Priority, tempPrc2);
+        }
+
+        Process tempProcess;
+        while (!isEmpty(&waitingQueue))
+        {
+
+            tempProcess = waitingQueue.front->data;
+            dequeue(&waitingQueue);
+
+            if (memType == 1)
+            {
+                // printf("i am in \n");
+                if (FF(&tempProcess))
+                {
+                    insert(&AvilablPros, tempProcess.Priority, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+            else
+            {
+                if (BMA(&tempProcess))
+                {
+                    insert(&AvilablPros, tempProcess.Priority, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+        }
+
+        while (!isEmpty(&tempWaitingQueue))
+        {
+            tempProcess = tempWaitingQueue.front->data;
+            dequeue(&tempWaitingQueue);
+            enqueue(&waitingQueue, tempProcess);
         }
         if (shmCurrProcess->realID == -1)
         {
@@ -238,11 +309,43 @@ void SRTN()
         {
             break;
         }
-        while (!isEmpty(&readyQueue))
+
+        while (!isEmpty(&waitingQueue))
         {
-            tempProcess = readyQueue.front->data;
-            dequeue(&readyQueue);
-            insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
+
+            tempProcess = waitingQueue.front->data;
+            dequeue(&waitingQueue);
+
+            if (memType == 1)
+            {
+                // printf("i am in \n");
+                if (FF(&tempProcess))
+                {
+                    insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+            else
+            {
+                if (BMA(&tempProcess))
+                {
+                    insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+        }
+
+        while (!isEmpty(&tempWaitingQueue))
+        {
+            tempProcess = tempWaitingQueue.front->data;
+            dequeue(&tempWaitingQueue);
+            enqueue(&waitingQueue, tempProcess);
         }
 
         if (shmCurrProcess->realID == -1)
@@ -281,6 +384,8 @@ void SRTN()
                     tempProcess.remRunTime = shmCurrProcess->remRunTime;
                     tempProcess.startingTime = shmCurrProcess->startingTime;
                     tempProcess.runTime = shmCurrProcess->runTime;
+                    tempProcess.memSize = shmCurrProcess->memSize;
+                    tempProcess.startMemLoc = shmCurrProcess->startMemLoc;
                     insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
                     shmCurrProcess->realID = -1;
                 }
@@ -301,6 +406,44 @@ void RR(int quantum)
         if (finishedProcesses.count == numOfProcesses)
         {
             break;
+        }
+        Process tempProcess;
+        while (!isEmpty(&waitingQueue))
+        {
+
+            tempProcess = waitingQueue.front->data;
+            dequeue(&waitingQueue);
+
+            if (memType == 1)
+            {
+                // printf("i am in \n");
+                if (FF(&tempProcess))
+                {
+                    enqueue(&readyQueue, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+            else
+            {
+                if (BMA(&tempProcess))
+                {
+                    enqueue(&readyQueue, tempProcess);
+                }
+                else
+                {
+                    enqueue(&tempWaitingQueue, tempProcess);
+                }
+            }
+        }
+
+        while (!isEmpty(&tempWaitingQueue))
+        {
+            tempProcess = tempWaitingQueue.front->data;
+            dequeue(&tempWaitingQueue);
+            enqueue(&waitingQueue, tempProcess);
         }
         if (shmCurrProcess->realID == -1)
         { // No current process is running
@@ -334,6 +477,115 @@ void RR(int quantum)
     }
 }
 
+bool FF(Process *process)
+{
+    ListNode *reqLoc;
+    reqLoc = findFirstFit(freeMem, process->memSize);
+
+    if (reqLoc != NULL)
+    {
+        int st = reqLoc->start;
+        int en = reqLoc->end;
+        if (reqLoc->end - reqLoc->start + 1 > process->memSize)
+        {
+            // printf("YES \n");
+            process->startMemLoc = reqLoc->start;
+
+            freeMem = deleteNode(freeMem, reqLoc);
+            printf("deleted from free memory start  %d end %d \n", st, en);
+            // printf("%d %d \n", freeMem->start, freeMem->end);
+
+            freeMem = insertSorted(freeMem, st + process->memSize, en);
+            printf("reserved process ID %d start  %d end %d \n", process->id, st, st + process->memSize - 1);
+            FILE *fptr = OpenFile("memory.log");
+            fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, st, st + process->memSize - 1);
+            CloseFile(fptr);
+            printf("inserted in free memory start  %d end %d \n", st + process->memSize, en);
+        }
+        else
+        {
+            process->startMemLoc = reqLoc->start;
+            freeMem = deleteNode(freeMem, reqLoc);
+            printf("deleted from free memory start  %d end %d \n", st, en);
+            printf("ID %d start  %d end %d \n", process->id, st, en);
+            FILE *fptr = OpenFile("memory.log");
+            fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, st, en);
+            CloseFile(fptr);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool BMA(Process *process)
+{
+    return false;
+}
+
+void releaseMemFF(Process *process)
+{
+    ListNode *previousNode;
+    ListNode *nextNode;
+    int st;
+    int en;
+
+    nextNode = find(freeMem, process->startMemLoc + process->memSize, false);
+    previousNode = find(freeMem, process->startMemLoc - 1, true);
+    printf("released process ID %d start  %d end %d \n", process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+    FILE *fptr = OpenFile("memory.log");
+    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+    CloseFile(fptr);
+    if (previousNode == NULL && nextNode == NULL)
+    {
+        // printf("one \n");
+        freeMem = insertSorted(freeMem, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+        printf("inserted in free memory start  %d end %d \n", process->startMemLoc, process->startMemLoc + process->memSize - 1);
+    }
+    else if (previousNode == NULL && nextNode != NULL)
+    {
+        // printf("two \n");
+
+        st = nextNode->start;
+        en = nextNode->end;
+
+        freeMem = deleteNode(freeMem, nextNode);
+        printf("deleted from free memory start  %d end %d \n", st, en);
+
+        freeMem = insertSorted(freeMem, process->startMemLoc, nextNode->end);
+        printf("inserted in free memory start  %d end %d \n", process->startMemLoc, nextNode->end);
+    }
+    else if (previousNode != NULL && nextNode == NULL)
+    {
+        // printf("three \n");
+
+        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
+
+        freeMem = deleteNode(freeMem, previousNode);
+
+        freeMem = insertSorted(freeMem, previousNode->start, process->startMemLoc + process->memSize - 1);
+        printf("inserted in free memory start  %d end %d \n", previousNode->start, process->startMemLoc + process->memSize - 1);
+    }
+    else
+    {
+        // printf("four \n");
+
+        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
+
+        freeMem = deleteNode(freeMem, previousNode);
+        printf("deleted from free memory start  %d end %d \n", nextNode->start, nextNode->end);
+
+        freeMem = deleteNode(freeMem, nextNode);
+
+        freeMem = insertSorted(freeMem, previousNode->start, nextNode->end);
+        printf("inserted in free memory start  %d end %d \n", previousNode->start, nextNode->end);
+    }
+}
+
+void releaseMemBMA(Process *process)
+{
+}
+
 void genPrefFile()
 {
     double *data;
@@ -345,7 +597,7 @@ void genPrefFile()
         Process tempProcess;
         tempProcess = dequeue(&finishedProcesses);
         data[i] = ((double)tempProcess.finishTime - tempProcess.arrivalTime) / tempProcess.runTime;
-        // printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
+        printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
         WTsum += (tempProcess.startingTime - tempProcess.arrivalTime);
         i++;
     }

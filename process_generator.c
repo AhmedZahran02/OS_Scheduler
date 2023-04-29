@@ -12,6 +12,7 @@ bool updateCounter(int counter);
 
 Process *readFile(char *file, int *size);
 struct ScheduleType getChosenScheduling();
+int getChosenMemAlloc();
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +23,7 @@ int main(int argc, char *argv[])
     Process *processArray = readFile("processes.txt", &size);
     // 2. Ask the user for the chosen scheduling algorithm and its parameters, if there are any.
     struct ScheduleType scheduleType = getChosenScheduling();
+    int memType = getChosenMemAlloc();
     // 3. Initiate and create the scheduler and clock processes.
     int clk_Id = fork();
     if (clk_Id == 0)
@@ -38,7 +40,7 @@ int main(int argc, char *argv[])
     if (Scheduler_Id == 0)
     {
         system("gcc scheduler.c -o scheduler.out -lm");
-        execl("scheduler.out", "scheduler.c", &(scheduleType.type), &(scheduleType.parameter), &size, NULL);
+        execl("scheduler.out", "scheduler.c", &(scheduleType.type), &(scheduleType.parameter), &size, &memType, NULL);
     }
     else if (Scheduler_Id == -1)
     {
@@ -149,6 +151,17 @@ struct ScheduleType getChosenScheduling()
         scheduleType.parameter = quantum;
     }
     return scheduleType;
+}
+
+int getChosenMemAlloc()
+{
+    int memType;
+    printf("choose the memory allocation technique\n");
+    printf("1-First Fit\n");
+    printf("2-Buddy Memory Allocation\n");
+
+    scanf("%d", &memType);
+    return memType;
 }
 
 char **split(char *string, char *seperators, int *count)
