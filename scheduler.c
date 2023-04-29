@@ -40,7 +40,7 @@ struct Queue2 finishedProcesses;
 
 void handler(int signum);
 void cleanprocess(int signum);
-
+double cpuUtilization();
 int main(int argc, char *argv[])
 {
     printf("Scheduler is starting ...\n");
@@ -590,6 +590,7 @@ void genPrefFile()
 {
     double *data;
     double WTsum = 0;
+    double cpuUtil = cpuUtilization();
     data = (double *)malloc(numOfProcesses * sizeof(double));
     int i = 0;
     while (!isEmpty(&finishedProcesses))
@@ -606,7 +607,8 @@ void genPrefFile()
     double avgWT = WTsum / numOfProcesses;
 
     FILE *out_file2 = fopen("scheduler.pref", "w"); // write only
-    fprintf(out_file2, "CPU Utilization = %.*f %%\nAVGWait = %.*f\nAVGWTA = %.*f\nstdWTA = %.*f\n", 2, 100.0, 2, avgWT, 2, avgWTA, 2, sdWTA);
+    
+    fprintf(out_file2, "CPU Utilization = %.*f %%\nAVGWait = %.*f\nAVGWTA = %.*f\nstdWTA = %.*f\n", 2, cpuUtil, 2, avgWT, 2, avgWTA, 2, sdWTA);
     CloseFile(out_file2);
 }
 
@@ -634,4 +636,24 @@ void clearResources2(int signum)
     shmctl(shm_Id2, IPC_RMID, NULL);
     printf("Scheduler terminating!\n");
     exit(0);
+}
+
+double cpuUtilization(){
+    int firstArrival = 0;
+    int finishTime = 0;
+    struct Node3* p1 = finishedProcesses.front;
+    struct Node3* p2 = finishedProcesses.rear;
+    firstArrival = p1->data.arrivalTime;
+    finishTime = p2->data.finishTime;
+    int runningSum =0;
+    while(p1 != p2)
+    {
+        runningSum += p1->data.runTime;
+        p1 = p1->next;
+    }
+    runningSum += p1->data.runTime;
+    int realTime = finishTime - firstArrival;
+    runningSum = min(runningSum,realTime);
+    double utilization =  100 * (double)(runningSum)/(realTime);
+    return utilization;
 }
