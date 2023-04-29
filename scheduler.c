@@ -544,11 +544,7 @@ bool BMA(Process *process)
     if(!reqLoc) return  false;
     splitMemoryBuddy(process->memSize , reqLoc) ;
     process->startMemLoc = reqLoc->start ;
-    PrintList(freeMem);
-    printf("\n");
     DeleteMemory(reqLoc, process->id) ;
-    PrintList(freeMem);
-    printf("\n");
     return true;
 }
 
