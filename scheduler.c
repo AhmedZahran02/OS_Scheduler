@@ -8,6 +8,8 @@ int msg_Id2 = -1;
 int shm_Id = -1;
 int shm_Id2 = -1;
 int memType;
+int signalCheck = 0;
+Process signalProcess;
 Process *shmCurrProcess;
 
 int numOfProcesses;
@@ -197,26 +199,28 @@ void cleanProcessResources(int pid)
 
     FinishProcess(shmCurrProcess);
 
-    tempProcess.id = shmCurrProcess->id;
-    tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
-    tempProcess.finishTime = shmCurrProcess->finishTime;
-    tempProcess.Priority = shmCurrProcess->Priority;
-    tempProcess.realID = shmCurrProcess->realID;
-    tempProcess.remRunTime = shmCurrProcess->remRunTime;
-    tempProcess.startingTime = shmCurrProcess->startingTime;
-    tempProcess.runTime = shmCurrProcess->runTime;
-    tempProcess.memSize = shmCurrProcess->memSize;
-    tempProcess.startMemLoc = shmCurrProcess->startMemLoc;
-    if (memType == 1)
-    {
-        releaseMemFF(&tempProcess);
-    }
-    else
-    {
-        releaseMemBMA(shmCurrProcess);
-    }
-    enqueue(&finishedProcesses, tempProcess);
-    shmCurrProcess->realID = -1;
+    signalProcess.id = shmCurrProcess->id;
+    signalProcess.arrivalTime = shmCurrProcess->arrivalTime;
+    signalProcess.finishTime = shmCurrProcess->finishTime;
+    signalProcess.Priority = shmCurrProcess->Priority;
+    signalProcess.realID = shmCurrProcess->realID;
+    signalProcess.remRunTime = shmCurrProcess->remRunTime;
+    signalProcess.startingTime = shmCurrProcess->startingTime;
+    signalProcess.runTime = shmCurrProcess->runTime;
+    signalProcess.memSize = shmCurrProcess->memSize;
+    signalProcess.startMemLoc = shmCurrProcess->startMemLoc;
+
+    signalCheck = 1;
+    // if (memType == 1)
+    // {
+    //     releaseMemFF(&tempProcess);
+    // }
+    // else
+    // {
+    //     releaseMemBMA(shmCurrProcess);
+    // }
+    // enqueue(&finishedProcesses, tempProcess);
+    // shmCurrProcess->realID = -1;
 }
 
 void HPF()
@@ -292,6 +296,23 @@ void HPF()
                     ContinueProcess(&runningPrc);
                 }
             }
+        }
+
+        if (signalCheck == 1)
+        {
+
+            if (memType == 1)
+            {
+                releaseMemFF(&tempProcess);
+            }
+            else
+            {
+                releaseMemBMA(shmCurrProcess);
+            }
+            enqueue(&finishedProcesses, signalProcess);
+            shmCurrProcess->realID = -1;
+
+            signalCheck = 0;
         }
     }
 }
@@ -395,6 +416,22 @@ void SRTN()
                 }
             }
         }
+        if (signalCheck == 1)
+        {
+
+            if (memType == 1)
+            {
+                releaseMemFF(&tempProcess);
+            }
+            else
+            {
+                releaseMemBMA(shmCurrProcess);
+            }
+            enqueue(&finishedProcesses, signalProcess);
+            shmCurrProcess->realID = -1;
+
+            signalCheck = 0;
+        }
     }
 }
 
@@ -462,6 +499,7 @@ void RR(int quantum)
                 }
                 else
                 { // It started before so let's make it continue
+
                     ContinueProcess(&Current_Process);
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
@@ -477,6 +515,22 @@ void RR(int quantum)
                 if (shmCurrProcess->remRunTime)
                     enqueue(&readyQueue, Cur_Process);
             }
+        }
+        if (signalCheck == 1)
+        {
+
+            if (memType == 1)
+            {
+                releaseMemFF(&tempProcess);
+            }
+            else
+            {
+                releaseMemBMA(shmCurrProcess);
+            }
+            enqueue(&finishedProcesses, signalProcess);
+            shmCurrProcess->realID = -1;
+
+            signalCheck = 0;
         }
     }
 }
