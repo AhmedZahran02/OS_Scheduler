@@ -539,6 +539,8 @@ void DeleteMemory(ListNode *reqLoc, int process_id)
     freeMem = deleteNode(freeMem, reqLoc);
     printf("deleted from free memory start  %d end %d \n", st, en);
     printf("ID %d start  %d end %d \n", process_id, st, en);
+    // printf("after delete\n");
+    // PrintList(freeMem);
     FILE *fptr = OpenFile("memory.log");
     fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), memLength, process_id, st, en);
     CloseFile(fptr);
@@ -552,13 +554,11 @@ ListNode *splitMemoryBuddy(int process_size, ListNode *freePart)
     while (req_size < cur_size)
     {
         cur_size /= 2;
-        printf("before delete\n");
-        PrintList(freeMem);
+        // printf("before delete\n");
+        // PrintList(freeMem);
         freeMem = deleteNode(freeMem, freePart);
         freeMem = insertSorted(freeMem, freePart->start, freePart->start + cur_size - 1);
         freeMem = insertSorted(freeMem, freePart->start + cur_size, freePart->end);
-        printf("after delete\n");
-        PrintList(freeMem);
         freePart = find(freeMem, freePart->start, 0);
         // PrintList(freeMem);
         // freePart->end = en = (st + en) >> 1;
@@ -630,52 +630,63 @@ void releaseMemBMA(Process *process)
     int start = process->startMemLoc;
     int end;
     int closer = process->memSize;
+    int powof2 = 2;
+    while (powof2 < closer)
+    {
+        powof2 = powof2 * 2;
+    }
+
+    FILE *fptr = OpenFile("memory.log");
+    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), powof2, process->id, process->startMemLoc, process->startMemLoc + powof2 - 1);
+    CloseFile(fptr);
+
     while (true)
     {
         ListNode *brother;
         int st;
         int en;
         int closer2 = 2;
-        while (closer2 <= closer)
+        while (closer2 < closer)
         {
             closer2 = closer2 * 2;
         }
 
-        end = process->startMemLoc + closer2 - 1;
-
+        end = start + closer2 - 1;
         getBrother(start, end, &st, &en);
         brother = find(freeMem, st, 0);
-        if (brother != NULL)
+        if (brother != NULL && (brother->end - brother->start) == (end - start))
         {
+            printf("Brother is start: %d end: %d\n", brother->start, brother->end);
             if (brother->start > start + closer2 - 1)
             {
                 freeMem = deleteNode(freeMem, brother);
                 printf("deleted from free memory start  %d end %d \n", st, en);
-                freeMem = insertSorted(freeMem, start, brother->end);
-                printf("inserted in free memory start  %d end %d \n", start, brother->end);
                 end = brother->end;
-                closer = (brother->end - brother->start + 1) * 2;
+                closer = (end - start + 1);
             }
             else
             {
                 freeMem = deleteNode(freeMem, brother);
                 printf("deleted from free memory start  %d end %d \n", st, en);
-                freeMem = insertSorted(freeMem, brother->start, end);
-                printf("inserted in free memory start  %d end %d \n", brother->start, end);
                 start = brother->start;
-                closer = (brother->end - brother->start + 1) * 2;
+                closer = (end - start + 1);
             }
         }
         else
         {
+            freeMem = insertSorted(freeMem, start, end);
+            printf("inserted in free memory start  %d end %d \n", start, end);
+            PrintList(freeMem);
             break;
         }
+        printf("start: %d end:  %d closer: %d\n", start, end, closer);
+        PrintList(freeMem);
     }
 }
 
 void getBrother(int mystart, int myend, int *st, int *en)
 {
-    int start, end;
+    int start = -1, end = -1;
     if (((mystart & (mystart - 1)) == 0) && (((myend + 1) & myend) == 0))
     {
         if (mystart == 0)
