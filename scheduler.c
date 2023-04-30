@@ -43,6 +43,7 @@ struct Queue2 finishedProcesses;
 void handler(int signum);
 void cleanprocess(int signum);
 double cpuUtilization();
+void brotherExists(int mystart,int myend ,int *st,int *en);
 int main(int argc, char *argv[])
 {
     printf("Scheduler is starting ...\n");
@@ -622,9 +623,180 @@ void releaseMemFF(Process *process)
         printf("inserted in free memory start  %d end %d \n", previousNode->start, nextNode->end);
     }
 }
+void releaseMemBMA(Process *process){
+    ListNode *brother;
+    int st;
+    int en;
+    int closer = process->memSize;
+    int closer2 = 2;
 
-void releaseMemBMA(Process *process)
-{
+    while(closer2 <= closer){ 
+        closer2 = closer2 * 2;
+    }
+
+    brotherExists( process->startMemLoc, process->startMemLoc + closer2 - 1, &st, &en);
+    brother = find(freeMem, en, 1);
+    if(brother!= NULL)
+    {
+        freeMem = deleteNode(freeMem, brother);
+        printf("deleted from free memory start  %d end %d \n", st, en);
+
+        freeMem = insertSorted(freeMem, process->startMemLoc, brother->end);
+        printf("inserted in free memory start  %d end %d \n", process->startMemLoc, brother->end);
+        
+        brother->start = process->startMemLoc;
+        brother->end = brother->end;
+        
+        while (true)
+        {
+        ListNode *brother2;
+        brotherExists( brother->start, brother->end - 1, &brother2->start, &brother2->end);
+        brother2 = find(freeMem, brother2->end, 1);
+        if(brother2!= NULL)
+        {
+            freeMem = deleteNode(freeMem, brother2);
+            printf("deleted from free memory start  %d end %d \n", st, en);
+
+            freeMem = insertSorted(freeMem, brother->start, brother2->end);
+            printf("inserted in free memory start  %d end %d \n", brother->start, brother2->end);
+            brother->end = brother2 ->end;
+        }
+        else
+        {
+            break;
+        }
+         
+         if (brother2!= NULL)
+         {
+            if(brother2->end ==1023)
+            break;
+         }
+         
+        }
+    }
+
+ 
+    
+}
+// void releaseMemBMA2(Process *process)
+// {
+//     ListNode *prevNode;
+//     ListNode *nextNode;
+//     int st;
+//     int en;
+//     int closer = process->memSize;
+//     int closer2 = 2;
+
+//     while(closer2 <= closer){ 
+//         closer2 = closer2 * 2;
+//     }
+
+//     nextNode = find(freeMem, process->startMemLoc + closer2 , false);
+//     prevNode = find(freeMem, process->startMemLoc - 1, true);
+
+
+
+//     printf("released process ID %d start  %d end %d \n", process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+//     FILE *fptr = OpenFile("memory.log");
+//     fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+//     CloseFile(fptr);
+
+//     while(prevNode != NULL || nextNode != NULL){
+
+        
+//     }
+//     if (prevNode == NULL && nextNode == NULL)
+//     {
+//         // printf("one \n");
+//         freeMem = insertSorted(freeMem, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+//         printf("inserted in free memory start  %d end %d \n", process->startMemLoc, process->startMemLoc + process->memSize - 1);
+//     }
+//     else if (prevNode == NULL && nextNode != NULL)
+//     {
+
+//         st = nextNode->start;
+//         en = nextNode->end;
+
+//         if(brotherExists( process->startMemLoc, process->startMemLoc + closer2 - 1, st, en))
+//         {
+//             freeMem = deleteNode(freeMem, nextNode);
+//             printf("deleted from free memory start  %d end %d \n", st, en);
+
+//             freeMem = insertSorted(freeMem, process->startMemLoc, nextNode->end);
+//             printf("inserted in free memory start  %d end %d \n", process->startMemLoc, nextNode->end);
+//         }
+//     }
+//     else if (prevNode != NULL && nextNode == NULL)
+//     {
+//         st = prevNode->start;
+//         en = prevNode->end;
+
+//         if(brotherExists( process->startMemLoc, process->startMemLoc + closer2 - 1, st, en))
+//         {
+//             printf("deleted from free memory start  %d end %d \n", prevNode->start, prevNode->end);
+
+//             freeMem = deleteNode(freeMem, prevNode);
+
+//             freeMem = insertSorted(freeMem, prevNode->start, process->startMemLoc + process->memSize - 1);
+//             printf("inserted in free memory start  %d end %d \n", prevNode->start, process->startMemLoc + process->memSize - 1);
+//         }
+//     }
+//     else
+//     {
+//         int st1 = nextNode->start;
+//         int en1 = nextNode->end;
+//         int st2 = prevNode->start;
+//         int en2 = prevNode->end;
+
+//         if(brotherExists( process->startMemLoc, process->startMemLoc + closer2 - 1, st, en))
+//         {
+//             freeMem = deleteNode(freeMem, nextNode);
+//             printf("deleted from free memory start  %d end %d \n", st, en);
+
+//             freeMem = insertSorted(freeMem, process->startMemLoc, nextNode->end);
+//             printf("inserted in free memory start  %d end %d \n", process->startMemLoc, nextNode->end);
+//         }
+//         if(brotherExists( process->startMemLoc, process->startMemLoc + closer2 - 1, st, en))
+//         {
+//             printf("deleted from free memory start  %d end %d \n", prevNode->start, prevNode->end);
+
+//             freeMem = deleteNode(freeMem, prevNode);
+
+//             freeMem = insertSorted(freeMem, prevNode->start, process->startMemLoc + process->memSize - 1);
+//             printf("inserted in free memory start  %d end %d \n", prevNode->start, process->startMemLoc + process->memSize - 1);
+//         }
+//     }
+// }
+void brotherExists(int mystart,int myend ,int *st,int *en) {
+    //if start and end pow of 2 ?  this means its the first two pairs 
+//                            if mystart =0   start=myend+1 end = (myend+1)2 -1
+//                            if mystart !=0  start=0; end =mystart -1
+    int start, end;
+    if(((mystart & (mystart - 1) )== 0) && (((myend + 1)& myend) == 0)){
+        if(mystart == 0){
+            start = myend+1 ;
+            end = (myend + 1) * 2 -1;
+        }else{
+            start=0;
+            end =mystart -1 ;
+        }
+
+    }
+ //   if start pow of 2  ? end = mystart2 -1    start = myend + 1
+    else if((mystart & (mystart - 1) )== 0)
+    {
+        end = mystart * 2 -1;
+        start = myend + 1;
+        
+    }
+//if end + 1 pow of 2? end = mystart -1      start = myend +1 / 2
+    else if(((myend + 1)& myend) == 0)
+    {
+        end = mystart - 1;
+        start = (myend + 1) / 2;
+    }
+    *st = start;
+    *en = end;
 }
 
 void genPrefFile()
