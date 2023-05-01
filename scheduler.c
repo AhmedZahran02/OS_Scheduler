@@ -738,7 +738,7 @@ double cpuUtilization()
         p1 = p1->next;
     }
     runningSum += p1->data.runTime;
-    int realTime = finishTime - firstArrival;
+    int realTime = finishTime;
     runningSum = min(runningSum, realTime);
     double utilization = 100 * (double)(runningSum) / (realTime);
     return utilization;
