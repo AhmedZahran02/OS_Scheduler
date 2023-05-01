@@ -4,3 +4,7 @@
 a.out
 clk.out
 scheduler.out
+memory.log
+processes.txt
+scheduler.log
+scheduler.pref

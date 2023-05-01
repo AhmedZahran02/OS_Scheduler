@@ -25,6 +25,7 @@ bool initializeShm2();
 void HPF();
 void SRTN();
 void RR(int qunatum);
+bool occupyMemory(Process * p);
 
 bool FF(Process *process);
 bool BMA(Process *process);
@@ -463,30 +464,8 @@ void RR(int quantum)
 
             tempProcess = waitingQueue.front->data;
             dequeue(&waitingQueue);
-
-            if (memType == 1)
-            {
-                // printf("i am in \n");
-                if (FF(&tempProcess))
-                {
-                    enqueue(&readyQueue, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
-            }
-            else
-            {
-                if (BMA(&tempProcess))
-                {
-                    enqueue(&readyQueue, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
-            }
+            if(occupyMemory(&tempProcess)) enqueue(&readyQueue, tempProcess);
+            else enqueue(&tempWaitingQueue, tempProcess);
         }
 
         while (!isEmpty(&tempWaitingQueue))
@@ -746,7 +725,13 @@ void releaseMemBMA(Process *process)
         PrintList(freeMem);
     }
 }
+void releaseMem(){
 
+}
+bool occupyMemory(Process * p){
+    if (memType == 1) return FF(p);
+    else if(memType ==2) return BMA(p);
+}
 void getBrother(int mystart, int myend, int *st, int *en)
 {
     int start = -1, end = -1;
