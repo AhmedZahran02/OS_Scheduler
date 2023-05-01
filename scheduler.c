@@ -196,7 +196,10 @@ void cleanProcessResources(int pid)
     // free memory used by that pid
     // remove the finishing in the 3 scheduling
     Process tempProcess;
-
+    if (shmCurrProcess->realID == -1)
+    {
+        printf("ahhhhhhhhhhhhhhhhhhhhhh \n");
+    }
     FinishProcess(shmCurrProcess);
 
     signalProcess.id = shmCurrProcess->id;
@@ -303,11 +306,11 @@ void HPF()
 
             if (memType == 1)
             {
-                releaseMemFF(&tempProcess);
+                releaseMemFF(&signalProcess);
             }
             else
             {
-                releaseMemBMA(shmCurrProcess);
+                releaseMemBMA(&signalProcess);
             }
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
@@ -421,11 +424,11 @@ void SRTN()
 
             if (memType == 1)
             {
-                releaseMemFF(&tempProcess);
+                releaseMemFF(&signalProcess);
             }
             else
             {
-                releaseMemBMA(shmCurrProcess);
+                releaseMemBMA(&signalProcess);
             }
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
@@ -486,6 +489,7 @@ void RR(int quantum)
             dequeue(&tempWaitingQueue);
             enqueue(&waitingQueue, tempProcess);
         }
+
         if (shmCurrProcess->realID == -1)
         { // No current process is running
             if (!isEmpty(&readyQueue))
@@ -521,11 +525,11 @@ void RR(int quantum)
 
             if (memType == 1)
             {
-                releaseMemFF(&tempProcess);
+                releaseMemFF(&signalProcess);
             }
             else
             {
-                releaseMemBMA(shmCurrProcess);
+                releaseMemBMA(&signalProcess);
             }
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
