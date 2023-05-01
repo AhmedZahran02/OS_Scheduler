@@ -23,12 +23,14 @@ int main(int agrc, char *argv[])
     while (remainingtime > 0)
     {
         sleep(1);
+        printf("process with pid %d ran for 1 quanta , r = %d \n", getpid(), remainingtime - 1);
         --remainingtime;
         shmCurrProcess->remRunTime = remainingtime;
     }
 
     initializeMsgQueue();
     kill_me();
+    printf("loool process send signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     kill(getppid(), SIGUSR2);
 
     return 0;
@@ -36,7 +38,7 @@ int main(int agrc, char *argv[])
 
 bool initializeMsgQueue()
 {
-    if ((msg_Id = msgget(133456, 0666 | IPC_CREAT)) == -1)
+    if ((msg_Id = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize msg queue");
         return false;

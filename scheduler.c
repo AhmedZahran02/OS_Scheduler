@@ -112,7 +112,7 @@ bool initializeMsgQueue()
 
 bool initializeMsgQueue2()
 {
-    if ((msg_Id2 = msgget(133456, 0666 | IPC_CREAT)) == -1)
+    if ((msg_Id2 = msgget(CLRPKEY, 0666 | IPC_CREAT)) == -1)
     {
         printf("failled to initialize msg queue 2");
         return false;
@@ -174,6 +174,7 @@ void handler(int signum)
 
 void cleanprocess(int signum)
 {
+
     if (msg_Id2 == -1)
     {
         printf("failed to clean process\n");
@@ -181,6 +182,7 @@ void cleanprocess(int signum)
     }
     struct message *msg = malloc(sizeof(struct message));
     msgrcv(msg_Id2, (void *)msg, sizeof(struct message), 0, !IPC_NOWAIT);
+    printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
 
     cleanProcessResources(msg->pid);
     // printf("i recieved the pid = %d\n", msg->pid);
@@ -199,6 +201,10 @@ void cleanProcessResources(int pid)
     if (shmCurrProcess->realID == -1)
     {
         printf("ahhhhhhhhhhhhhhhhhhhhhh \n");
+    }
+    else
+    {
+        printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     }
     FinishProcess(shmCurrProcess);
 
@@ -501,9 +507,8 @@ void RR(int quantum)
                     StartProcess(&Current_Process);
                     *shmCurrProcess = Current_Process;
                 }
-                else
+                else if (shmCurrProcess->remRunTime > 0)
                 { // It started before so let's make it continue
-
                     ContinueProcess(&Current_Process);
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
@@ -512,12 +517,12 @@ void RR(int quantum)
         }
         else
         {
-            if (last_start - shmCurrProcess->remRunTime >= quantum && !isEmpty(&readyQueue))
+            if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0)
             { // If it still didn't finish but Preemption will occur
                 Process Cur_Process = *shmCurrProcess;
                 StopProcess(shmCurrProcess);
-                if (shmCurrProcess->remRunTime)
-                    enqueue(&readyQueue, Cur_Process);
+                // if (shmCurrProcess->remRunTime)
+                enqueue(&readyQueue, Cur_Process);
             }
         }
         if (signalCheck == 1)

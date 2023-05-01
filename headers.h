@@ -203,7 +203,6 @@ void ContinueProcess(Process *P)
 {
     if (P->realID != -1)
     {
-        printf("At time %d process %d CONTINUED arr: %d total: %d remaining: %d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
         FILE *fptr = OpenFile("scheduler.log");
         fprintf(fptr, "At time %d process %d resumed arr %d total %d remain %d\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime);
         CloseFile(fptr);
