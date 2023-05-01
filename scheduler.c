@@ -223,7 +223,9 @@ void cleanProcessResources(int pid)
     signalProcess.memSize = shmCurrProcess->memSize;
     signalProcess.startMemLoc = shmCurrProcess->startMemLoc;
     releaseMem(&signalProcess);
+    printf("Before inserting: %d \n" , finishedProcesses.count);
     enqueue(&finishedProcesses, signalProcess);
+    printf("After inserting: %d \n" , finishedProcesses.count);
     shmCurrProcess->realID = -1;
     finishedProcessesCount++;
 }
@@ -408,14 +410,13 @@ void RR(int quantum)
                     last_start = Current_Process.remRunTime;
                     StartProcess(&Current_Process);
                     *shmCurrProcess = Current_Process;
+
                 }
                 else if (Current_Process.remRunTime > 0)
                 { // It started before so let's make it continue
                     ContinueProcess(&Current_Process);
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
-//                    current_time =getClk();
-//                    nextSecondWaiting(&current_time);
                 }
             }
         }
@@ -425,10 +426,12 @@ void RR(int quantum)
             { // If it still didn't finish but Preemption will occur
                 current_time =getClk();
                 nextSecondWaiting(&current_time);
-                Process Cur_Process = *shmCurrProcess;
-                shmCurrProcess = StopProcess(shmCurrProcess);
-                // if (shmCurrProcess->remRunTime)
-                readyQueue =  *enqueue(&readyQueue, Cur_Process);
+                if(shmCurrProcess->remRunTime > 0) {
+                    Process Cur_Process = *shmCurrProcess;
+                    shmCurrProcess = StopProcess(shmCurrProcess);
+                    // if (shmCurrProcess->remRunTime)
+                    readyQueue = *enqueue(&readyQueue, Cur_Process);
+                }
             }
         }
 
