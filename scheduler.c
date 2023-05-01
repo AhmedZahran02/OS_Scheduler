@@ -26,7 +26,7 @@ void HPF();
 void SRTN();
 void RR(int qunatum);
 bool occupyMemory(Process * p);
-
+void releaseMem(Process * p);
 bool FF(Process *process);
 bool BMA(Process *process);
 void releaseMemFF(Process *process);
@@ -198,6 +198,8 @@ void cleanProcessResources(int pid)
     // put final details in process struct
     // free memory used by that pid
     // remove the finishing in the 3 scheduling
+
+
     Process tempProcess;
     if (shmCurrProcess->realID == -1)
     {
@@ -208,7 +210,6 @@ void cleanProcessResources(int pid)
         printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     }
     FinishProcess(shmCurrProcess);
-
     signalProcess.id = shmCurrProcess->id;
     signalProcess.arrivalTime = shmCurrProcess->arrivalTime;
     signalProcess.finishTime = shmCurrProcess->finishTime;
@@ -219,8 +220,9 @@ void cleanProcessResources(int pid)
     signalProcess.runTime = shmCurrProcess->runTime;
     signalProcess.memSize = shmCurrProcess->memSize;
     signalProcess.startMemLoc = shmCurrProcess->startMemLoc;
-
-    signalCheck = 1;
+    releaseMem(&signalProcess);
+    enqueue(&finishedProcesses, signalProcess);
+    shmCurrProcess->realID = -1;
     // if (memType == 1)
     // {
     //     releaseMemFF(&tempProcess);
@@ -504,22 +506,8 @@ void RR(int quantum)
                 enqueue(&readyQueue, Cur_Process);
             }
         }
-        if (signalCheck == 1)
-        {
 
-            if (memType == 1)
-            {
-                releaseMemFF(&signalProcess);
-            }
-            else
-            {
-                releaseMemBMA(&signalProcess);
-            }
-            enqueue(&finishedProcesses, signalProcess);
-            shmCurrProcess->realID = -1;
 
-            signalCheck = 0;
-        }
     }
 }
 
@@ -725,7 +713,9 @@ void releaseMemBMA(Process *process)
         PrintList(freeMem);
     }
 }
-void releaseMem(){
+void releaseMem(Process * p){
+    if (memType == 1) releaseMemFF((Process *) &p);
+    else releaseMemBMA((Process *) &p);
 
 }
 bool occupyMemory(Process * p){
