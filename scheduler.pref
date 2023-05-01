@@ -1,4 +1,4 @@
 CPU Utilization = 100.00 %
-AVGWait = 0.40
-AVGWTA = 1.24
-stdWTA = 0.15
+AVGWait = 0.20
+AVGWTA = 1.02
+stdWTA = 0.02

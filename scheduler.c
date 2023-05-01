@@ -30,7 +30,7 @@ bool occupyMemory(Process * p);
 void releaseMem(Process * p);
 bool FF(Process *process);
 bool BMA(Process *process);
-void releaseMemFF(Process *process);
+void releaseMemFF(int ,int, int);
 void releaseMemBMA(int , int, int );
 void DeleteMemory(ListNode *reqLoc, int process_id);
 ListNode *splitMemoryBuddy(int process_size, ListNode *freePart);
@@ -305,14 +305,7 @@ void HPF()
         if (signalCheck == 1)
         {
 
-            if (memType == 1)
-            {
-                releaseMemFF(&signalProcess);
-            }
-            else
-            {
-                releaseMemBMA(signalProcess.id  ,signalProcess.startMemLoc , signalProcess.memSize);
-            }
+            releaseMem(&signalProcess);
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
 
@@ -422,15 +415,7 @@ void SRTN()
         }
         if (signalCheck == 1)
         {
-
-            if (memType == 1)
-            {
-                releaseMemFF(&signalProcess);
-            }
-            else
-            {
-                releaseMemBMA(signalProcess.id , signalProcess.startMemLoc , signalProcess.memSize);
-            }
+            releaseMem(&signalProcess);
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
 
@@ -587,23 +572,23 @@ ListNode *splitMemoryBuddy(int process_size, ListNode *freePart)
     return freePart;
 }
 
-void releaseMemFF(Process *process)
+void releaseMemFF(int process_id , int memSize , int startMemLoc )
 {
     ListNode *previousNode;
     ListNode *nextNode;
     int st;
     int en;
-    nextNode = find(freeMem, process->startMemLoc + process->memSize, false);
-    previousNode = find(freeMem, process->startMemLoc - 1, true);
-    printf("released process ID %d start  %d end %d \n", process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+    nextNode = find(freeMem, startMemLoc + memSize, false);
+    previousNode = find(freeMem, startMemLoc - 1, true);
+    printf("released process ID %d start  %d end %d \n", process_id, startMemLoc, startMemLoc + memSize - 1);
     FILE *fptr = OpenFile("memory.log");
-    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
+    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), memSize, process_id, startMemLoc, startMemLoc + memSize - 1);
     CloseFile(fptr);
     if (previousNode == NULL && nextNode == NULL)
     {
         // printf("one \n");
-        freeMem = insertSorted(freeMem, process->startMemLoc, process->startMemLoc + process->memSize - 1);
-        printf("inserted in free memory start  %d end %d \n", process->startMemLoc, process->startMemLoc + process->memSize - 1);
+        freeMem = insertSorted(freeMem, startMemLoc, startMemLoc + memSize - 1);
+        printf("inserted in free memory start  %d end %d \n", startMemLoc, startMemLoc + memSize - 1);
     }
     else if (previousNode == NULL && nextNode != NULL)
     {
@@ -615,8 +600,8 @@ void releaseMemFF(Process *process)
         freeMem = deleteNode(freeMem, nextNode);
         printf("deleted from free memory start  %d end %d \n", st, en);
 
-        freeMem = insertSorted(freeMem, process->startMemLoc, nextNode->end);
-        printf("inserted in free memory start  %d end %d \n", process->startMemLoc, nextNode->end);
+        freeMem = insertSorted(freeMem, startMemLoc, nextNode->end);
+        printf("inserted in free memory start  %d end %d \n", startMemLoc, nextNode->end);
     }
     else if (previousNode != NULL && nextNode == NULL)
     {
@@ -626,8 +611,8 @@ void releaseMemFF(Process *process)
 
         freeMem = deleteNode(freeMem, previousNode);
 
-        freeMem = insertSorted(freeMem, previousNode->start, process->startMemLoc + process->memSize - 1);
-        printf("inserted in free memory start  %d end %d \n", previousNode->start, process->startMemLoc + process->memSize - 1);
+        freeMem = insertSorted(freeMem, previousNode->start, startMemLoc +memSize - 1);
+        printf("inserted in free memory start  %d end %d \n", previousNode->start, startMemLoc +memSize - 1);
     }
     else
     {
@@ -703,7 +688,7 @@ void releaseMemBMA(int process_id , int startMemLoc , int memSize)
     }
 }
 void releaseMem(Process * p){
-    if (memType == 1) releaseMemFF((Process *) &p);
+    if (memType == 1) releaseMemFF(p->id , p->memSize , p->startMemLoc);
     else releaseMemBMA(p->id , p->startMemLoc , p->memSize);
 }
 bool occupyMemory(Process * p){
