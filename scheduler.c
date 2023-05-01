@@ -475,7 +475,7 @@ void RR(int quantum)
         }
         else
         {
-            if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0)
+            if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0 && !isEmpty(&readyQueue))
             { // If it still didn't finish but Preemption will occur
                 Process Cur_Process = *shmCurrProcess;
                 shmCurrProcess = StopProcess(shmCurrProcess);
