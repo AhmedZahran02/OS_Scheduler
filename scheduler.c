@@ -18,6 +18,7 @@ ListNode *freeMem;
 
 void clearResources2(int);
 void cleanProcessResources(int pid);
+void nextSecondWaiting(int *lastSecond) ;
 bool recvProcess(Process *Process);
 bool initializeMsgQueue();
 bool initializeMsgQueue2();
@@ -374,6 +375,7 @@ void SRTN()
 void RR(int quantum)
 {
     Process currentProcess;
+    int  current_time =-1;
     // Getting the current process
     shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     shmCurrProcess->realID = -1;
@@ -383,7 +385,6 @@ void RR(int quantum)
         Process tempProcess;
         while (!isEmpty(&waitingQueue))
         {
-
             tempProcess = waitingQueue.front->data;
             dequeue(&waitingQueue);
             if(occupyMemory(&tempProcess)) enqueue(&readyQueue, tempProcess);
@@ -414,12 +415,16 @@ void RR(int quantum)
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
                 }
+                current_time =getClk();
+                nextSecondWaiting(&current_time);
             }
         }
         else
         {
             if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0 && !isEmpty(&readyQueue))
             { // If it still didn't finish but Preemption will occur
+                current_time =getClk();
+                nextSecondWaiting(&current_time);
                 Process Cur_Process = *shmCurrProcess;
                 shmCurrProcess = StopProcess(shmCurrProcess);
                 // if (shmCurrProcess->remRunTime)
@@ -737,4 +742,10 @@ double cpuUtilization()
     runningSum = min(runningSum, realTime);
     double utilization = 100 * (double)(runningSum) / (realTime);
     return utilization;
+}
+
+void nextSecondWaiting(int *lastSecond)
+{
+    while (*lastSecond == getClk()) ;
+    *lastSecond = getClk();
 }
