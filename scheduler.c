@@ -414,9 +414,9 @@ void RR(int quantum)
                     ContinueProcess(&Current_Process);
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
+//                    current_time =getClk();
+//                    nextSecondWaiting(&current_time);
                 }
-                current_time =getClk();
-                nextSecondWaiting(&current_time);
             }
         }
         else
