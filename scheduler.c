@@ -235,46 +235,21 @@ void HPF()
     AvilablPros = create();
     runningPrc.realID = -1;
     *shmCurrProcess = runningPrc;
-    while (1)
+    while (finishedProcesses.count != numOfProcesses)
     {
-        if (finishedProcesses.count == numOfProcesses)
-        {
-            break;
-        }
-        while (!isEmpty(&readyQueue))
-        {
-            Process tempPrc2 = dequeue(&readyQueue);
-        }
-
+//        while (!isEmpty(&readyQueue))
+//        {
+//            Process tempPrc2 = dequeue(&readyQueue);
+//        }
         Process tempProcess;
         while (!isEmpty(&waitingQueue))
         {
-
             tempProcess = waitingQueue.front->data;
             dequeue(&waitingQueue);
-
-            if (memType == 1)
-            {
-                // printf("i am in \n");
-                if (FF(&tempProcess))
-                {
-                    insert(&AvilablPros, tempProcess.Priority, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
-            }
-            else
-            {
-                if (BMA(&tempProcess))
-                {
-                    insert(&AvilablPros, tempProcess.Priority, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
+            if(occupyMemory(&tempProcess)){ // If there is free memory suitable for the process
+                insert(&AvilablPros, tempProcess.Priority, tempProcess);
+            }else{ // Otherwise put it in the waiting till there is free space for it
+                enqueue(&tempWaitingQueue, tempProcess);
             }
         }
 
@@ -285,30 +260,27 @@ void HPF()
             enqueue(&waitingQueue, tempProcess);
         }
         if (shmCurrProcess->realID == -1)
-        {
+        { // If there is no current process running
             if (AvilablPros.count > 0)
-            {
-
+            {// If there are ready processes
                 runningPrc = dequeue2(&AvilablPros);
                 *shmCurrProcess = runningPrc;
                 if (runningPrc.realID == -1)
-                {
+                { // If it's the first time to start
                     shmCurrProcess->realID = StartProcess(&runningPrc);
                 }
                 else
-                {
+                {// Otherwise , it started before so let it continue (CONTEXT SWITCHING)
                     ContinueProcess(&runningPrc);
                 }
             }
         }
 
         if (signalCheck == 1)
-        {
-
+        { // If there was signal sent to kill the process
             releaseMem(&signalProcess);
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
-
             signalCheck = 0;
         }
     }
@@ -324,43 +296,18 @@ void SRTN()
     currProcess.realID = -1;
     *shmCurrProcess = currProcess;
 
-    while (1)
+    while (finishedProcesses.count != numOfProcesses)
     {
-        //  printf("lol \n");
-        if (finishedProcesses.count == numOfProcesses)
-        {
-            break;
-        }
-
         while (!isEmpty(&waitingQueue))
         {
 
             tempProcess = waitingQueue.front->data;
             dequeue(&waitingQueue);
 
-            if (memType == 1)
-            {
-                // printf("i am in \n");
-                if (FF(&tempProcess))
-                {
-                    insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
-            }
+            if(occupyMemory(&tempProcess))
+                insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
             else
-            {
-                if (BMA(&tempProcess))
-                {
-                    insert(&readyPQueue, tempProcess.remRunTime, tempProcess);
-                }
-                else
-                {
-                    enqueue(&tempWaitingQueue, tempProcess);
-                }
-            }
+                enqueue(&tempWaitingQueue, tempProcess);
         }
 
         while (!isEmpty(&tempWaitingQueue))
@@ -431,12 +378,8 @@ void RR(int quantum)
     shmCurrProcess = (Process *)shmat(shm_Id2, (void *)0, 0);
     shmCurrProcess->realID = -1;
     int last_start = -1;
-    while (1)
+    while (finishedProcesses.count != numOfProcesses)
     {
-        if (finishedProcessesCount == numOfProcesses)
-        {
-            break;
-        }
         Process tempProcess;
         while (!isEmpty(&waitingQueue))
         {
@@ -491,8 +434,7 @@ bool FF(Process *process)
 {
     ListNode *reqLoc;
     reqLoc = findFirstFit(freeMem, process->memSize);
-
-    if (reqLoc != NULL)
+    if (reqLoc != NULL) // It means the memory is not full
     {
         int st = reqLoc->start;
         int en = reqLoc->end;
@@ -524,8 +466,7 @@ bool FF(Process *process)
         }
         return true;
     }
-
-    return false;
+    return false; // There is no available suitable memory
 }
 
 bool BMA(Process *process)
