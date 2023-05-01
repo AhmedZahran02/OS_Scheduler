@@ -172,7 +172,7 @@ int StartProcess(Process *P)
     return Process_Id;
 }
 
-void FinishProcess(Process *P)
+Process * FinishProcess(Process *P)
 {
     P->finishTime = getClk();
     int wait = P->startingTime - P->arrivalTime;
@@ -182,9 +182,10 @@ void FinishProcess(Process *P)
     printf("At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %.*f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, 2, WTA);
     fprintf(fptr, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.*f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, 2, WTA);
     CloseFile(fptr);
+    return P;
 }
 
-void StopProcess(Process *P)
+Process *StopProcess(Process *P)
 {
     if (P->realID != -1)
     {
@@ -197,6 +198,7 @@ void StopProcess(Process *P)
         kill(P->realID, SIGSTOP);
         P->realID = -1;
     }
+    return P ;
 }
 
 void ContinueProcess(Process *P)

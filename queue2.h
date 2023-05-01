@@ -42,7 +42,7 @@ bool isEmpty(struct Queue2 *queue)
 }
 
 // Add an element to the rear of the queue
-void enqueue(struct Queue2 *queue, Process data)
+struct Queue2 * enqueue(struct Queue2 *queue, Process data)
 {
     struct Node3 *newNode = createNode(data);
     if (isEmpty(queue))
@@ -56,6 +56,7 @@ void enqueue(struct Queue2 *queue, Process data)
         queue->rear = newNode;
     }
     queue->count++;
+    return queue ;
 }
 
 // Remove an element from the front of the queue

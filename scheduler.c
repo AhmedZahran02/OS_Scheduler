@@ -11,6 +11,7 @@ int memType;
 int signalCheck = 0;
 Process signalProcess;
 Process *shmCurrProcess;
+int finishedProcessesCount = 0;
 
 int numOfProcesses;
 ListNode *freeMem;
@@ -30,7 +31,7 @@ void releaseMem(Process * p);
 bool FF(Process *process);
 bool BMA(Process *process);
 void releaseMemFF(Process *process);
-void releaseMemBMA(Process *process);
+void releaseMemBMA(int , int, int );
 void DeleteMemory(ListNode *reqLoc, int process_id);
 ListNode *splitMemoryBuddy(int process_size, ListNode *freePart);
 int getCounter();
@@ -209,7 +210,7 @@ void cleanProcessResources(int pid)
     {
         printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     }
-    FinishProcess(shmCurrProcess);
+    shmCurrProcess = FinishProcess(shmCurrProcess);
     signalProcess.id = shmCurrProcess->id;
     signalProcess.arrivalTime = shmCurrProcess->arrivalTime;
     signalProcess.finishTime = shmCurrProcess->finishTime;
@@ -223,16 +224,7 @@ void cleanProcessResources(int pid)
     releaseMem(&signalProcess);
     enqueue(&finishedProcesses, signalProcess);
     shmCurrProcess->realID = -1;
-    // if (memType == 1)
-    // {
-    //     releaseMemFF(&tempProcess);
-    // }
-    // else
-    // {
-    //     releaseMemBMA(shmCurrProcess);
-    // }
-    // enqueue(&finishedProcesses, tempProcess);
-    // shmCurrProcess->realID = -1;
+    finishedProcessesCount++;
 }
 
 void HPF()
@@ -319,7 +311,7 @@ void HPF()
             }
             else
             {
-                releaseMemBMA(&signalProcess);
+                releaseMemBMA(signalProcess.id  ,signalProcess.startMemLoc , signalProcess.memSize);
             }
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
@@ -413,7 +405,7 @@ void SRTN()
                 if (shmCurrProcess->remRunTime > currProcess.remRunTime)
                 {
                     tempProcess.realID = shmCurrProcess->realID;
-                    StopProcess(shmCurrProcess);
+                    shmCurrProcess =  StopProcess(shmCurrProcess);
                     tempProcess.id = shmCurrProcess->id;
                     tempProcess.arrivalTime = shmCurrProcess->arrivalTime;
                     tempProcess.finishTime = shmCurrProcess->finishTime;
@@ -437,7 +429,7 @@ void SRTN()
             }
             else
             {
-                releaseMemBMA(&signalProcess);
+                releaseMemBMA(signalProcess.id , signalProcess.startMemLoc , signalProcess.memSize);
             }
             enqueue(&finishedProcesses, signalProcess);
             shmCurrProcess->realID = -1;
@@ -456,7 +448,7 @@ void RR(int quantum)
     int last_start = -1;
     while (1)
     {
-        if (finishedProcesses.count == numOfProcesses)
+        if (finishedProcessesCount == numOfProcesses)
         {
             break;
         }
@@ -488,7 +480,7 @@ void RR(int quantum)
                     StartProcess(&Current_Process);
                     *shmCurrProcess = Current_Process;
                 }
-                else if (shmCurrProcess->remRunTime > 0)
+                else if (Current_Process.remRunTime > 0)
                 { // It started before so let's make it continue
                     ContinueProcess(&Current_Process);
                     last_start = Current_Process.remRunTime;
@@ -501,12 +493,11 @@ void RR(int quantum)
             if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0)
             { // If it still didn't finish but Preemption will occur
                 Process Cur_Process = *shmCurrProcess;
-                StopProcess(shmCurrProcess);
+                shmCurrProcess = StopProcess(shmCurrProcess);
                 // if (shmCurrProcess->remRunTime)
-                enqueue(&readyQueue, Cur_Process);
+                readyQueue =  *enqueue(&readyQueue, Cur_Process);
             }
         }
-
 
     }
 }
@@ -602,7 +593,6 @@ void releaseMemFF(Process *process)
     ListNode *nextNode;
     int st;
     int en;
-
     nextNode = find(freeMem, process->startMemLoc + process->memSize, false);
     previousNode = find(freeMem, process->startMemLoc - 1, true);
     printf("released process ID %d start  %d end %d \n", process->id, process->startMemLoc, process->startMemLoc + process->memSize - 1);
@@ -655,11 +645,11 @@ void releaseMemFF(Process *process)
     }
 }
 
-void releaseMemBMA(Process *process)
+void releaseMemBMA(int process_id , int startMemLoc , int memSize)
 {
-    int start = process->startMemLoc;
+    int start = startMemLoc;
     int end;
-    int closer = process->memSize;
+    int closer = memSize;
     int powof2 = 2;
     while (powof2 < closer)
     {
@@ -667,7 +657,7 @@ void releaseMemBMA(Process *process)
     }
 
     FILE *fptr = OpenFile("memory.log");
-    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), powof2, process->id, process->startMemLoc, process->startMemLoc + powof2 - 1);
+    fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), powof2,process_id, startMemLoc, startMemLoc + powof2 - 1);
     CloseFile(fptr);
 
     while (true)
@@ -680,7 +670,6 @@ void releaseMemBMA(Process *process)
         {
             closer2 = closer2 * 2;
         }
-
         end = start + closer2 - 1;
         getBrother(start, end, &st, &en);
         brother = find(freeMem, st, 0);
@@ -715,8 +704,7 @@ void releaseMemBMA(Process *process)
 }
 void releaseMem(Process * p){
     if (memType == 1) releaseMemFF((Process *) &p);
-    else releaseMemBMA((Process *) &p);
-
+    else releaseMemBMA(p->id , p->startMemLoc , p->memSize);
 }
 bool occupyMemory(Process * p){
     if (memType == 1) return FF(p);
