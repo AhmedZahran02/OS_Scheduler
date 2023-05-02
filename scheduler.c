@@ -435,8 +435,8 @@ void RR(int quantum)
                 if(shmCurrProcess->remRunTime > 0) {
                     Process Cur_Process = *shmCurrProcess;
                     prevStop = getClk() ;
-//                    shmCurrProcess = StopProcessLingo(shmCurrProcess, prevStop);
-                    StopProcess(shmCurrProcess);
+                    shmCurrProcess = StopProcessLingo(shmCurrProcess, prevStop);
+//                    StopProcess(shmCurrProcess);
                     // if (shmCurrProcess->remRunTime)
                     readyQueue = *enqueue(&readyQueue, Cur_Process);
                 }
