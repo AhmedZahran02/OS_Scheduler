@@ -9,6 +9,7 @@ int shm_Id = -1;
 int shm_Id2 = -1;
 int memType;
 int signalCheck = 0;
+int prevStop = -1;
 Process signalProcess;
 Process *shmCurrProcess;
 int finishedProcessesCount = 0;
@@ -185,7 +186,7 @@ void cleanprocess(int signum)
     }
     struct message *msg = malloc(sizeof(struct message));
     msgrcv(msg_Id2, (void *)msg, sizeof(struct message), 0, !IPC_NOWAIT);
-    printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
+//    printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
 
     cleanProcessResources(msg->pid);
     // printf("i recieved the pid = %d\n", msg->pid);
@@ -209,7 +210,7 @@ void cleanProcessResources(int pid)
     }
     else
     {
-        printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
+//        printf("loool schdeuler receive signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     }
     shmCurrProcess = FinishProcess(shmCurrProcess);
     signalProcess.id = shmCurrProcess->id;
@@ -223,11 +224,12 @@ void cleanProcessResources(int pid)
     signalProcess.memSize = shmCurrProcess->memSize;
     signalProcess.startMemLoc = shmCurrProcess->startMemLoc;
     releaseMem(&signalProcess);
-    printf("Before inserting: %d \n" , finishedProcesses.count);
+//    printf("Before inserting: %d \n" , finishedProcesses.count);
     enqueue(&finishedProcesses, signalProcess);
-    printf("After inserting: %d \n" , finishedProcesses.count);
+//    printf("After inserting: %d \n" , finishedProcesses.count);
     shmCurrProcess->realID = -1;
     finishedProcessesCount++;
+    prevStop =getClk();
 }
 
 void HPF()
@@ -240,10 +242,6 @@ void HPF()
     *shmCurrProcess = runningPrc;
     while (finishedProcesses.count != numOfProcesses)
     {
-//        while (!isEmpty(&readyQueue))
-//        {
-//            Process tempPrc2 = dequeue(&readyQueue);
-//        }
         Process tempProcess;
         while (!isEmpty(&waitingQueue))
         {
@@ -407,16 +405,24 @@ void RR(int quantum)
                 Process Current_Process = dequeue(&readyQueue);
                 if (Current_Process.startingTime == -1)
                 { // If it's the first time to get scheduled
+//                    current_time =getClk();
+//                    nextSecondWaiting(&current_time);
                     last_start = Current_Process.remRunTime;
                     StartProcess(&Current_Process);
                     *shmCurrProcess = Current_Process;
-
+                    shmCurrProcess->previousRem = Current_Process.remRunTime;
+                    shmCurrProcess->resumeTime = getClk();
                 }
                 else if (Current_Process.remRunTime > 0)
                 { // It started before so let's make it continue
-                    ContinueProcess(&Current_Process);
+                    current_time =getClk();
+                    nextSecondWaiting(&current_time);
+//                    ContinueProcess(&Current_Process);
+                    ContinueProcessLingo(&Current_Process,prevStop) ;
                     last_start = Current_Process.remRunTime;
                     *shmCurrProcess = Current_Process;
+                    shmCurrProcess->previousRem = Current_Process.remRunTime;
+                    shmCurrProcess->resumeTime = getClk();
                 }
             }
         }
@@ -424,11 +430,13 @@ void RR(int quantum)
         {
             if (last_start - shmCurrProcess->remRunTime >= quantum && shmCurrProcess->remRunTime > 0 && !isEmpty(&readyQueue))
             { // If it still didn't finish but Preemption will occur
-                current_time =getClk();
-                nextSecondWaiting(&current_time);
+//                current_time =getClk();
+//                nextSecondWaiting(&current_time);
                 if(shmCurrProcess->remRunTime > 0) {
                     Process Cur_Process = *shmCurrProcess;
-                    shmCurrProcess = StopProcess(shmCurrProcess);
+                    prevStop = getClk() ;
+//                    shmCurrProcess = StopProcessLingo(shmCurrProcess, prevStop);
+                    StopProcess(shmCurrProcess);
                     // if (shmCurrProcess->remRunTime)
                     readyQueue = *enqueue(&readyQueue, Cur_Process);
                 }
@@ -452,22 +460,22 @@ bool FF(Process *process)
             process->startMemLoc = reqLoc->start;
 
             freeMem = deleteNode(freeMem, reqLoc);
-            printf("deleted from free memory start  %d end %d \n", st, en);
+//            printf("deleted from free memory start  %d end %d \n", st, en);
             // printf("%d %d \n", freeMem->start, freeMem->end);
 
             freeMem = insertSorted(freeMem, st + process->memSize, en);
-            printf("reserved process ID %d start  %d end %d \n", process->id, st, st + process->memSize - 1);
+//            printf("reserved process ID %d start  %d end %d \n", process->id, st, st + process->memSize - 1);
             FILE *fptr = OpenFile("memory.log");
             fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, st, st + process->memSize - 1);
             CloseFile(fptr);
-            printf("inserted in free memory start  %d end %d \n", st + process->memSize, en);
+//            printf("inserted in free memory start  %d end %d \n", st + process->memSize, en);
         }
         else
         {
             process->startMemLoc = reqLoc->start;
             freeMem = deleteNode(freeMem, reqLoc);
-            printf("deleted from free memory start  %d end %d \n", st, en);
-            printf("ID %d start  %d end %d \n", process->id, st, en);
+//            printf("deleted from free memory start  %d end %d \n", st, en);
+//            printf("ID %d start  %d end %d \n", process->id, st, en);
             FILE *fptr = OpenFile("memory.log");
             fprintf(fptr, "At time %d allocated %d bytes for process %d from  %d to %d\n", getClk(), process->memSize, process->id, st, en);
             CloseFile(fptr);
@@ -492,8 +500,8 @@ void DeleteMemory(ListNode *reqLoc, int process_id)
 {
     int st = reqLoc->start, en = reqLoc->end, memLength = en - st + 1;
     freeMem = deleteNode(freeMem, reqLoc);
-    printf("deleted from free memory start  %d end %d \n", st, en);
-    printf("ID %d start  %d end %d \n", process_id, st, en);
+//    printf("deleted from free memory start  %d end %d \n", st, en);
+//    printf("ID %d start  %d end %d \n", process_id, st, en);
     // printf("after delete\n");
     // PrintList(freeMem);
     FILE *fptr = OpenFile("memory.log");
@@ -529,7 +537,7 @@ void releaseMemFF(int process_id , int memSize , int startMemLoc )
     int en;
     nextNode = find(freeMem, startMemLoc + memSize, false);
     previousNode = find(freeMem, startMemLoc - 1, true);
-    printf("released process ID %d start  %d end %d \n", process_id, startMemLoc, startMemLoc + memSize - 1);
+//    printf("released process ID %d start  %d end %d \n", process_id, startMemLoc, startMemLoc + memSize - 1);
     FILE *fptr = OpenFile("memory.log");
     fprintf(fptr, "At time %d freed %d bytes for process %d from  %d to %d\n", getClk(), memSize, process_id, startMemLoc, startMemLoc + memSize - 1);
     CloseFile(fptr);
@@ -537,7 +545,7 @@ void releaseMemFF(int process_id , int memSize , int startMemLoc )
     {
         // printf("one \n");
         freeMem = insertSorted(freeMem, startMemLoc, startMemLoc + memSize - 1);
-        printf("inserted in free memory start  %d end %d \n", startMemLoc, startMemLoc + memSize - 1);
+//        printf("inserted in free memory start  %d end %d \n", startMemLoc, startMemLoc + memSize - 1);
     }
     else if (previousNode == NULL && nextNode != NULL)
     {
@@ -547,35 +555,35 @@ void releaseMemFF(int process_id , int memSize , int startMemLoc )
         en = nextNode->end;
 
         freeMem = deleteNode(freeMem, nextNode);
-        printf("deleted from free memory start  %d end %d \n", st, en);
+//        printf("deleted from free memory start  %d end %d \n", st, en);
 
         freeMem = insertSorted(freeMem, startMemLoc, nextNode->end);
-        printf("inserted in free memory start  %d end %d \n", startMemLoc, nextNode->end);
+//        printf("inserted in free memory start  %d end %d \n", startMemLoc, nextNode->end);
     }
     else if (previousNode != NULL && nextNode == NULL)
     {
         // printf("three \n");
 
-        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
+//        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
 
         freeMem = deleteNode(freeMem, previousNode);
 
         freeMem = insertSorted(freeMem, previousNode->start, startMemLoc +memSize - 1);
-        printf("inserted in free memory start  %d end %d \n", previousNode->start, startMemLoc +memSize - 1);
+//        printf("inserted in free memory start  %d end %d \n", previousNode->start, startMemLoc +memSize - 1);
     }
     else
     {
         // printf("four \n");
 
-        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
+//        printf("deleted from free memory start  %d end %d \n", previousNode->start, previousNode->end);
 
         freeMem = deleteNode(freeMem, previousNode);
-        printf("deleted from free memory start  %d end %d \n", nextNode->start, nextNode->end);
+//        printf("deleted from free memory start  %d end %d \n", nextNode->start, nextNode->end);
 
         freeMem = deleteNode(freeMem, nextNode);
 
         freeMem = insertSorted(freeMem, previousNode->start, nextNode->end);
-        printf("inserted in free memory start  %d end %d \n", previousNode->start, nextNode->end);
+//        printf("inserted in free memory start  %d end %d \n", previousNode->start, nextNode->end);
     }
 }
 
@@ -609,18 +617,18 @@ void releaseMemBMA(int process_id , int startMemLoc , int memSize)
         brother = find(freeMem, st, 0);
         if (brother != NULL && (brother->end - brother->start) == (end - start))
         {
-            printf("Brother is start: %d end: %d\n", brother->start, brother->end);
+//            printf("Brother is start: %d end: %d\n", brother->start, brother->end);
             if (brother->start > start + closer2 - 1)
             {
                 freeMem = deleteNode(freeMem, brother);
-                printf("deleted from free memory start  %d end %d \n", st, en);
+//                printf("deleted from free memory start  %d end %d \n", st, en);
                 end = brother->end;
                 closer = (end - start + 1);
             }
             else
             {
                 freeMem = deleteNode(freeMem, brother);
-                printf("deleted from free memory start  %d end %d \n", st, en);
+//                printf("deleted from free memory start  %d end %d \n", st, en);
                 start = brother->start;
                 closer = (end - start + 1);
             }
@@ -628,12 +636,12 @@ void releaseMemBMA(int process_id , int startMemLoc , int memSize)
         else
         {
             freeMem = insertSorted(freeMem, start, end);
-            printf("inserted in free memory start  %d end %d \n", start, end);
-            PrintList(freeMem);
+//            printf("inserted in free memory start  %d end %d \n", start, end);
+//            PrintList(freeMem);
             break;
         }
-        printf("start: %d end:  %d closer: %d\n", start, end, closer);
-        PrintList(freeMem);
+//        printf("start: %d end:  %d closer: %d\n", start, end, closer);
+//        PrintList(freeMem);
     }
 }
 void releaseMem(Process * p){
@@ -686,7 +694,7 @@ void genPrefFile()
         Process tempProcess;
         tempProcess = dequeue(&finishedProcesses);
         data[i] = ((double)tempProcess.finishTime - tempProcess.arrivalTime) / tempProcess.runTime;
-        printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
+//        printf("%f %d %d\n", data[i], tempProcess.finishTime, tempProcess.arrivalTime);
         WTsum += (tempProcess.startingTime - tempProcess.arrivalTime);
         i++;
     }

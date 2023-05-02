@@ -27,16 +27,18 @@ int main(int agrc, char *argv[])
 
     while (remainingtime > 0)
     {
-        printf("process with pid %d ran for 1 quanta , r = %d \n", getpid(), remainingtime - 1);
-        last =getClk();
-        while (last==getClk());
-            remainingtime -= 1;
-            last=getClk();
+//        printf("process with pid %d ran for 1 quanta , r = %d \n", getpid(), remainingtime - 1);
+        sleep(1);
+        remainingtime--;
+//        last =getClk();
+//        while (last==getClk());
+//            remainingtime -= 1;
+//            last=getClk();
         shmCurrProcess->remRunTime = remainingtime;
     }
     initializeMsgQueue();
     kill_me();
-    printf("loool process send signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
+//    printf("loool process send signal to finsish with id = %d , realId = %d \n", shmCurrProcess->id, shmCurrProcess->realID);
     kill(getppid(), SIGUSR2);
     return 0;
 }
@@ -63,4 +65,7 @@ bool kill_me()
     msgsnd(msg_Id, (void *)msg, sizeof(struct message), IPC_NOWAIT);
 
     return true;
+}
+void SignalHandler(){
+
 }

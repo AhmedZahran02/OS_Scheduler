@@ -13,6 +13,7 @@
 #include <signal.h>
 #include "string.h"
 #include <math.h>
+#include <time.h>
 
 typedef short bool;
 typedef struct Process Process;
@@ -38,6 +39,8 @@ struct Process
     int finishTime;   // initially = -1
     int memSize;
     int startMemLoc;
+    int resumeTime;
+    int previousRem ;
 };
 
 struct message
@@ -158,7 +161,7 @@ int StartProcess(Process *P)
 {
     int wait = getClk() - P->arrivalTime;
     FILE *fptr = OpenFile("scheduler.log");
-    printf("At time %d process %d STARTED arr: %d total: %d remaining: %d wait:%d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+//    printf("At time %d process %d STARTED arr: %d total: %d remaining: %d wait:%d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
     fprintf(fptr, "At time %d process %d started arr %d total %d remain %d wait %d\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
     CloseFile(fptr);
     int Process_Id = fork();
@@ -179,7 +182,7 @@ Process * FinishProcess(Process *P)
     int TA = P->finishTime - P->arrivalTime;
     double WTA = (double)TA / P->runTime;
     FILE *fptr = OpenFile("scheduler.log");
-    printf("At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %.*f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, 2, WTA);
+//    printf("At time %d process %d FINISHED arr: %d total: %d remaining: %d wait: %d TA: %d WTA : %.*f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, 2, WTA);
     fprintf(fptr, "At time %d process %d finished arr %d total %d remain %d wait %d TA %d WTA %.*f\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait, TA, 2, WTA);
     CloseFile(fptr);
     return P;
@@ -192,8 +195,24 @@ Process *StopProcess(Process *P)
         kill(P->realID, SIGSTOP);
         int wait = P->startingTime - P->arrivalTime;
         FILE *fptr = OpenFile("scheduler.log");
-        printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+//        printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+//        usleep(100*1000);
         fprintf(fptr, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+        CloseFile(fptr);
+        kill(P->realID, SIGSTOP);
+        P->realID = -1;
+    }
+    return P ;
+}
+Process *StopProcessLingo(Process *P ,int val)
+{
+    if (P->realID != -1)
+    {
+        kill(P->realID, SIGSTOP);
+        int wait = P->startingTime - P->arrivalTime;
+        FILE *fptr = OpenFile("scheduler.log");
+//        printf("At time %d process %d STOPPED arr: %d total: %d remaining: %d wait: %d \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+        fprintf(fptr, "At time %d process %d stopped arr %d total %d remain %d wait %d\n", val, P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
         CloseFile(fptr);
         kill(P->realID, SIGSTOP);
         P->realID = -1;
@@ -210,6 +229,18 @@ void ContinueProcess(Process *P)
         CloseFile(fptr);
         kill(P->realID, SIGCONT);
         int wait = P->startingTime - P->arrivalTime;
-        printf("At time %d process %d CONTINUED arr: %d total: %d remain: %d wait:%d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+//        printf("At time %d process %d CONTINUED arr: %d total: %d remain: %d wait:%d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
+    }
+}
+void ContinueProcessLingo(Process *P , int val)
+{
+    if (P->realID != -1)
+    {
+        FILE *fptr = OpenFile("scheduler.log");
+        fprintf(fptr, "At time %d process %d resumed arr %d total %d remain %d\n", val, P->id, P->arrivalTime, P->runTime, P->remRunTime);
+        CloseFile(fptr);
+        kill(P->realID, SIGCONT);
+        int wait = P->startingTime - P->arrivalTime;
+//        printf("At time %d process %d CONTINUED arr: %d total: %d remain: %d wait:%d  \n", getClk(), P->id, P->arrivalTime, P->runTime, P->remRunTime, wait);
     }
 }
